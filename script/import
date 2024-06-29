@@ -1,0 +1,4 @@
+#!/bin/bash
+for i in `ls import/*.{h,c}`; do
+    tr '\r' '\n' < $i | iconv -f MACINTOSH -t UTF-8 > src/${i#import/}
+done

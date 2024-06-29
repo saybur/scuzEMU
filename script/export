@@ -1,0 +1,6 @@
+#!/bin/bash
+mkdir -p export
+for i in `ls src/*.{h,c}`; do
+    tr '\n' '\r' < $i | iconv -f UTF-8 -t MACINTOSH > export/${i#src/}
+done
+tr '\n' '\r' < README.md | iconv -f UTF-8 -t MACINTOSH > export/README

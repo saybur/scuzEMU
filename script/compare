@@ -1,0 +1,4 @@
+#!/bin/bash
+for i in `ls import/*.{h,c}`; do
+    diff $i export/${i#import/}
+done
