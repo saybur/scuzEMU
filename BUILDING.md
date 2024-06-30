@@ -10,7 +10,9 @@ version 5 may work as well. This is the basic process to compile this yourself:
    Roman / Mac line ending format.
 3. Copy the files over to the development Mac.
 4. In THINK Project Manager, create a new project folder.
-5. Add all code files in `export` to the project (*.c, *.h, *.r).
+5. Add all code files in `export` to the project (*.c, *.h, *.r). You will need
+   to assign the type `TEXT` to `scuzemu.r` or it will not show up in the list
+   of files.
 6. Navigate to your "Mac Libraries" folder, find `MacTraps` and add it to the
    project.
 7. Go to the Project menu, choose "Set Project Type..." and set "Creator" to
