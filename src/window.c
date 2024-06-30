@@ -15,6 +15,7 @@
  */
 
 #include "constants.h"
+#include "emu.h"
 #include "window.h"
 
 static WindowPtr window;
@@ -83,8 +84,9 @@ Boolean window_init(void)
 	SetPt(&list_cell, 0, 0);
 
 	list = LNew(&list_vis, &list_con, list_cell, 0, window, true, true, false, true);
+	HLock((Handle) list);
 	if (list) {
-		(*list)->selFlags = lNoRect;
+		(*list)->selFlags = lOnlyOne;
 	} else {
 		return false;
 	}
