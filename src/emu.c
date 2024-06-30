@@ -18,36 +18,6 @@
 #include "scsi.h"
 #include "util.h"
 
-/**
- * (Nominally) converts raw names from the SCSI device into Pascal strings for display.
- * However, the list seems to be happy with null-terminated strings. Leaving here in case
- * it's needed but at this point it's just an inefficient strlen.
- *
- * @param str  input string to convert.
- * @param max  maximum length to search in string.
- * @return     length of string or -1 if no null terminator found before max reached.
- */
-static short emu_parse_string(char *str, short max)
-{
-	register short i;
-	short len;
-
-	len = -1;
-	for (i = 0; i < max; i++) {
-		if (str[i] == '\0') {
-			len = i;
-			break;
-		}
-	}
-
-	/*
-	 * if (len == -1) return -1;
-	 * BlockMove(str, &str[1], len);
-	 * str[0] = len;
-	 */
-	return len;
-}
-
 short emu_count;
 short emu_index[MAXIMUM_FILES];
 long emu_sizes[MAXIMUM_FILES];
@@ -83,7 +53,7 @@ Boolean emu_get_info(short item, short *index, long* size)
  * /and/ the provided list for showing to the user.
  *
  * The format of this data is described in scsi.c. Input should be cleanly divisible by
- * 40; excess bytes will be discarded.
+ * 40; excess bytes will be discarded. This call will modify the data provided.
  *
  * This will clear any existing items.
  *
@@ -94,20 +64,13 @@ Boolean emu_get_info(short item, short *index, long* size)
  */
 short emu_populate_list(ListHandle list, Handle data, short data_len)
 {
-	short lcnt, i, aidx, slen, rcnt;
-	char str[33];
+	short dcnt, rcnt, i, j, t, min;
 	Point p;
-	unsigned char *arr;
+	unsigned char *d;
+	short *offsets;
 
-	if (!list) {
-/* probably should treat this as a more critical error */
-/* TODO: for now just force-clear */
-		data_len = 0;
-	}
-
-	/* resolve condition where no data available */
-	lcnt = data_len / 40;
-	if (!data || lcnt <= 0) {
+	/* resolve condition where no data is available */
+	if (! (list && data && data_len > 40)) {
 		emu_count = 0;
 		if (list) {
 			LDelRow(0, 0, list);
@@ -116,8 +79,9 @@ short emu_populate_list(ListHandle list, Handle data, short data_len)
 	}
 
 	HLock(data);
+	d = (unsigned char *) (*data);
 
-	/* delete all existing rows */
+	/* delete all existing list rows */
 	LDelRow(0, 0, list);
 	emu_count = 0;
 
@@ -125,38 +89,76 @@ short emu_populate_list(ListHandle list, Handle data, short data_len)
 	rcnt = 0;
 	for (i = 0; i < data_len; i += 40) {
 		/* directory = 0, files = 1 */
-		if ((*data)[i + 1]) {
+		if (d[i+1]) {
 			rcnt++;
+
+			/* while we are here ensure string is null terminated */
+			d[i+34] = '\0';
 		}
+	}
+
+	/* reserve space for tracking valid data offsets and list cells */
+	if (! (offsets = (short *) NewPtr(rcnt * 2))) {
+		HUnlock(data);
+		StopAlert(ALRT_MEM_ERROR, 0);
+		return;
 	}
 	LAddRow(rcnt, 0, list);
 
-	for (i = 0; i < lcnt; i++) {
-		arr = (unsigned char *) &((*data)[i * 40]);
+	/* find the data offset for each actual entry */
+	t = 0;
+	for (i = 0; i < data_len; i += 40) {
+		if (! (d[i+1])) continue;
+		offsets[t++] = i;
+	}
 
-		/* as above, skip directories */
-		if (!arr[1]) {
-			continue;
+	/* modify data to make names Pascal strings */
+	for (i = 0; i < rcnt; i++) {
+		t = offsets[i];
+		for (j = 2; j <= 34; j++) {
+			if (d[t+j] == '\0') {
+				/* add Pascal length */
+				d[t+1] = j - 2;
+				break;
+			}
 		}
+	}
 
-		/* parse out the name of the file */
-		BlockMove(&(arr[2]), str, 33);
-		slen = emu_parse_string(str, 33);
-		if (slen < 1) continue;
+	/* sort by file name */
+	for (i = 0; i < rcnt - 1; i++) {
+		min = i;
+		for (j = i + 1; j < rcnt; j++) {
+			t = RelString(
+					&(d[offsets[j]+1]),
+					&(d[offsets[min]+1]),
+					false, false);
+			if (t < 0) min = j;
+		}
+		if (min != i) {
+			t = offsets[i];
+			offsets[i] = offsets[min];
+			offsets[min] = t;
+		}
+	}
+
+	/* store data */
+	for (i = 0; i < rcnt; i++) {
+		t = offsets[i];
 
 		/* insert filename into list */
 		SetPt(&p, 0, i);
-		LSetCell(str, slen, p, list);
+		LSetCell(&(d[t+2]), d[t+1], p, list);
 
 		/* fetch remaining values */
-		emu_index[emu_count] = arr[0];
-		emu_sizes[emu_count] = ((long) arr[36] << 24)
-				+ ((long) arr[37] << 16)
-				+ ((long) arr[38] << 8)
-				+ (long) arr[39];
+		emu_index[emu_count] = d[t];
+		emu_sizes[emu_count] = ((long) d[t+36] << 24)
+				+ ((long) d[t+37] << 16)
+				+ ((long) d[t+38] << 8)
+				+ (long) d[t+39];
 		emu_count++;
 	}
 
+	DisposPtr((Ptr) offsets);
 	HUnlock(data);
 }
 
