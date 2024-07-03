@@ -45,8 +45,9 @@
 #define ALRT_FILE_ERROR     259
 #define ALRT_MEM_ERROR      260
 
+#define CNTL_STOP           128
+
 #define DLOG_OPEN           512
-#define DLOG_XFER           513
 
 #define MENU_APPLE          128
 #define MENU_FILE           129
@@ -55,6 +56,7 @@
 #define STR_GENERAL         128
 
 #define WIND_MAIN           128
+#define WIND_PROGRESS       129
 
 /*
  * ----------------------------------------
@@ -65,5 +67,7 @@
 #define STRI_GEN_FILES      1
 #define STRI_GEN_IMAGES     2
 #define STRI_GEN_DOWNLOAD   3
+#define STRI_GEN_COPYING    4
+#define STRI_GEN_WRITING    6
 
 #endif /* __CONSTANTS__ */

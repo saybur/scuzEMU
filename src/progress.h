@@ -14,12 +14,18 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __TRANSFER__
-#define __TRANSFER__
+#ifndef __PROGRESS__
+#define __PROGRESS__
 
-Boolean transfer_start(short scsi, short item);
-short transfer_progress(void);
-Boolean transfer_tick(void);
-void transfer_end(void);
+void progress_activate(Boolean active);
+Boolean progress_click(EventRecord *evt);
+Boolean progress_init(void);
+void progress_resume(Boolean resume);
+void progress_show(Boolean open);
+void progress_update(void);
 
-#endif /* __TRANSFER__ */
+void progress_set_count(short count);
+void progress_set_file(StringPtr str);
+void progress_set_percent(short percent);
+
+#endif /* __PROGRESS__ */

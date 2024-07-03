@@ -80,3 +80,27 @@ void util_init(void)
 		DisposHandle((Handle) h);
 	}
 }
+
+/**
+ * Handles loading length-limited strings from resources. Use when you want a STR# entry
+ * but don't have a guaranteed 256 bytes of final storage available.
+ *
+ * @param list_id  the STR# to load.
+ * @param index    the index within the string list.
+ * @param *tmp     pointer to 256 bytes of temporary storage.
+ * @param *str     pointer to the resulting string storage.
+ * @param size     the data size of the above storage.
+ */
+void str_load(short list_id, short index, unsigned char *tmp, unsigned char *str, short size)
+{
+	short len;
+
+	GetIndString(tmp, list_id, index);
+	if (tmp[0] > size - 1) {
+		tmp[0] = size - 1;
+	}
+
+	if (tmp[0] > 0) {
+		BlockMove(tmp, str, tmp[0] + 1);
+	}
+}

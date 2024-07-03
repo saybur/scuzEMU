@@ -122,10 +122,22 @@ Boolean transfer_start(short scsi, short item)
 		}
 		is_open = true;
 
-		PostEvent(app3Evt, 0);
 		return true;
 	} else {
 		return false;
+	}
+}
+
+
+/**
+ * @return  the current transfer progress as a value from 0 to 100 (ish).
+ */
+short transfer_progress(void)
+{
+	if (fsize) {
+		return (fsize - frem) * 100 / fsize;
+	} else {
+		return 0;
 	}
 }
 
@@ -160,8 +172,6 @@ Boolean transfer_tick(void)
 	} else if (frem <= 0) {
 		return false;
 	} else {
-		/* these get missed in some cases, do not rely on them for critical functions */
-		PostEvent(app3Evt, (fsize - frem) * 100 / fsize);
 		return true;
 	}
 }

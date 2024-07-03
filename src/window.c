@@ -73,6 +73,7 @@ Boolean window_init(void)
 	if (!window) {
 		return false;
 	}
+	SetWRefCon(window, WIND_MAIN);
 
 	SetPort(window);
 
@@ -123,6 +124,8 @@ Boolean window_click(EventRecord *evt, short *i)
 	Boolean double_click;
 	Cell selected_cell;
 	Str255 s;
+
+	SetPort(window);
 
 	GlobalToLocal(&(evt->where));
 	double_click = LClick(evt->where, evt->modifiers, list);

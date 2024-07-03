@@ -17,6 +17,7 @@
 #include "constants.h"
 #include "dialog.h"
 #include "emu.h"
+#include "progress.h"
 #include "scsi.h"
 #include "window.h"
 #include "transfer.h"
@@ -96,17 +97,22 @@ short scsi_id;
 short open_type;
 Boolean xfer_active;
 
+static void do_xfer_stop()
+{
+	if (xfer_active) {
+		xfer_active = false;
+		transfer_end();
+		progress_show(false);
+		window_text(0);
+		SysBeep(1);
+	}
+}
+
 static void evt_null(void)
 {
 	if (xfer_active) {
 		busy_cursor();
-
-		if (!transfer_tick()) {
-			xfer_active = false;
-			transfer_end();
-			window_text(0);
-			SysBeep(1);
-		}
+		PostEvent(app3Evt, 0);
 	} else {
 		SetCursor(&arrow);
 	}
@@ -207,7 +213,15 @@ void do_menu_command(long menu_key)
 	HiliteMenu(0);
 }
 
-void do_in_content(EventRecord *evt)
+void do_in_content_progress(EventRecord *evt)
+{
+	if (progress_click(evt)) {
+		/* user clicked stop button */
+		do_xfer_stop();
+	}
+}
+
+void do_in_content_window(EventRecord *evt)
 {
 	short item;
 	Str255 str;
@@ -224,6 +238,14 @@ void do_in_content(EventRecord *evt)
 		} else {
 			if (transfer_start(scsi_id, item)) {
 				xfer_active = true;
+				GetIndString(str, STR_GENERAL, STRI_GEN_DOWNLOAD);
+				window_text(str);
+
+				window_get_item_name(item, str);
+				progress_set_percent(0);
+				progress_set_count(0);
+				progress_set_file(str);
+				progress_show(true);
 			} else {
 				/* failed to start the transfer */
 				SetCursor(&arrow);
@@ -236,8 +258,15 @@ void evt_mousedown(EventRecord *evt)
 {
 	short region;
 	WindowPtr window;
+	long ref;
 
 	region = FindWindow(evt->where, &window);
+	if (window) {
+		ref = ((WindowPeek) window)->refCon;
+	} else {
+		ref = 0;
+	}
+
 	switch (region) {
 	case inDesk:
 		/* ignore condition */
@@ -249,25 +278,50 @@ void evt_mousedown(EventRecord *evt)
 		SystemClick(evt, window);
 		break;
 	case inContent:
-		if (window != FrontWindow()) {
-			SelectWindow(window);
+		if (xfer_active) {
+			if (ref == WIND_PROGRESS) {
+				if (window != FrontWindow()) {
+					SelectWindow(window);
+				} else {
+					do_in_content_progress(evt);
+				}
+			} else if (ref == WIND_MAIN) {
+				/* fake a modal dialog response */
+				SysBeep(1);
+			}
 		} else {
-			do_in_content(evt);
+			if (window != FrontWindow()) {
+				SelectWindow(window);
+			} else {
+				do_in_content_window(evt);
+			}
 		}
 		break;
 	case inDrag:
-		DragWindow(window, evt->where, &(*GetGrayRgn())->rgnBBox);
+		if (xfer_active && ref == WIND_MAIN) {
+			SysBeep(1);
+		} else {
+			DragWindow(window, evt->where, &(*GetGrayRgn())->rgnBBox);
+		}
 		break;
 	case inGrow:
-		window_grow(evt->where);
+		if (xfer_active && ref == WIND_MAIN) {
+			SysBeep(1);
+		} else {
+			window_grow(evt->where);
+		}
 		break;
 	case inZoomIn:
 	case inZoomOut:
 		/* not implemented */
 		break;
 	case inGoAway:
-		if (TrackGoAway(window, evt->where)) {
-			window_show(false);
+		if (xfer_active && ref == WIND_MAIN) {
+			SysBeep(1);
+		} else {
+			if (TrackGoAway(window, evt->where)) {
+				window_show(false);
+			}
 		}
 		break;
 	}
@@ -287,14 +341,20 @@ void evt_update(EventRecord *evt)
 {
 	short kind;
 	WindowPtr window;
+	long ref;
 
 	if (!evt) return;
 	window = (WindowPtr) evt->message;
 	if (!window) return;
 	kind = ((WindowPeek) window)->windowKind;
+	ref = ((WindowPeek) window)->refCon;
 
 	if (kind == userKind) {
-		window_update();
+		if (ref == WIND_MAIN) {
+			window_update();
+		} else if (ref == WIND_PROGRESS) {
+			progress_update();
+		}
 	}
 }
 
@@ -302,44 +362,50 @@ void evt_activate(EventRecord *evt)
 {
 	short kind;
 	WindowPtr window;
+	long ref;
+	Boolean active;
 
 	if (!evt) return;
 	window = (WindowPtr) evt->message;
 	if (!window) return;
 	kind = ((WindowPeek) window)->windowKind;
+	ref = ((WindowPeek) window)->refCon;
+	active = evt->modifiers & activeFlag;
 
 	if (kind == userKind) {
-		window_activate(evt->modifiers & activeFlag);
+		if (xfer_active) {
+			if (ref == WIND_MAIN && active) {
+				/* progress steals activation */
+				progress_activate(true);
+				window_activate(false);
+			} else {
+				progress_activate(active);
+				window_activate(false);
+			}
+		} else {
+			window_activate(active);
+		}
 	}
 }
 
 void evt_os(EventRecord *evt)
 {
 	if (suspendResumeMessage & evt->message >> 24) {
-		window_resume(evt->message & resumeFlag);
+		if (xfer_active) {
+			progress_resume(evt->message & resumeFlag);
+		} else {
+			window_resume(evt->message & resumeFlag);
+		}
 	}
 }
 
-/* janky update text, will be replaced by proper xfer dialog at some point */
 void evt_app3(EventRecord *evt)
 {
-	Str255 s;
-	Str15 sn;
-	unsigned char c, cn;
-	long i;
+	if (!transfer_tick()) {
+		do_xfer_stop();
+	}
 
-	i = (long) evt->message;
-	NumToString(i, sn);
-	cn = (unsigned char) sn[0];
-	sn[++cn] = '%';
-
-	GetIndString(s, STR_GENERAL, STRI_GEN_DOWNLOAD);
-	c = (unsigned char) s[0];
-
-	BlockMove(&(sn[1]), &(s[c+1]), cn);
-	s[0] = c + cn;
-
-	window_text(s);
+	progress_set_percent(transfer_progress());
 }
 
 int main(void)
@@ -353,7 +419,7 @@ int main(void)
 
 	emu_init();
 	util_init();
-	if(!window_init()) {
+	if(! (window_init() && progress_init())) {
 		StopAlert(ALRT_MEM_ERROR, 0);
 		ExitToShell();
 	}
