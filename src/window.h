@@ -18,7 +18,7 @@
 #define __WINDOW__
 
 Boolean window_init(void);
-Boolean window_click(EventRecord *evt, short *i);
+void window_click(EventRecord *evt, short *sel, short *cnt);
 
 void window_get_item_name(short item, Str255 str);
 void window_grow(Point p);

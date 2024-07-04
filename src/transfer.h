@@ -17,9 +17,9 @@
 #ifndef __TRANSFER__
 #define __TRANSFER__
 
-Boolean transfer_start(short scsi, short item);
-short transfer_progress(void);
-Boolean transfer_tick(void);
+void transfer_init(void);
+Boolean transfer_start(short scsi, short *items, short icnt);
 void transfer_end(void);
+Boolean transfer_tick(void);
 
 #endif /* __TRANSFER__ */

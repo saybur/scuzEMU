@@ -208,11 +208,14 @@ void progress_resume(Boolean resume)
 /**
  * Sets the number of remaining files in the operation.
  *
+ * This triggers redrawing; call this _last_ when making an update.
+ *
  * @param percent  the number of remaining files.
  */
 void progress_set_count(short count)
 {
 	fcount = count;
+	progress_draw();
 }
 
 /**

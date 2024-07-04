@@ -39,7 +39,7 @@ void emu_init(void)
  * @param size   the file size in bytes.
  * @return       true if the item is within the range expected, false otherwise.
  */
-Boolean emu_get_info(short item, short *index, long* size)
+Boolean emu_get_info(short item, short *index, long *size)
 {
 	if (item < 0 || item > emu_count) return false;
 

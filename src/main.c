@@ -223,27 +223,29 @@ void do_in_content_progress(EventRecord *evt)
 
 void do_in_content_window(EventRecord *evt)
 {
-	short item;
+	short items[256];
+	short itemcnt;
 	Str255 str;
 
-	if (window_click(evt, &item)) {
+	window_click(evt, items, &itemcnt);
+
+	if (itemcnt > 0) {
 		/* veto if a transfer is active */
 		if (xfer_active) return;
 
 		busy_cursor();
 
 		if (open_type) {
-			emu_mount(scsi_id, item);
+			emu_mount(scsi_id, items[0]);
 			SetCursor(&arrow);
 		} else {
-			if (transfer_start(scsi_id, item)) {
+			if (transfer_start(scsi_id, items, itemcnt)) {
 				xfer_active = true;
 				GetIndString(str, STR_GENERAL, STRI_GEN_DOWNLOAD);
 				window_text(str);
 
-				window_get_item_name(item, str);
 				progress_set_percent(0);
-				progress_set_count(0);
+				progress_set_count(itemcnt);
 				progress_set_file(str);
 				progress_show(true);
 			} else {
@@ -404,8 +406,6 @@ void evt_app3(EventRecord *evt)
 	if (!transfer_tick()) {
 		do_xfer_stop();
 	}
-
-	progress_set_percent(transfer_progress());
 }
 
 int main(void)

@@ -86,11 +86,6 @@ Boolean window_init(void)
 
 	list = LNew(&list_vis, &list_con, list_cell, 0, window, true, true, false, true);
 	HLock((Handle) list);
-	if (list) {
-		(*list)->selFlags = lOnlyOne;
-	} else {
-		return false;
-	}
 
 	content_type = -1;
 	return true;
@@ -116,14 +111,17 @@ void window_activate(Boolean active)
  * if more program features are added.
  *
  * @param evt  the event record causing the click.
- * @param i    the cell item vertical index clicked on, if applicable.
+ * @param sel  vertical indexes of the selected cells, up to 256.
+ * @param cnt  pointer to a number that will contain the number of selected cells.
  * @return     true if a cell was selected, false otherwise.
  */
-Boolean window_click(EventRecord *evt, short *i)
+void window_click(EventRecord *evt, short *sel, short *cnt)
 {
 	Boolean double_click;
 	Cell selected_cell;
 	Str255 s;
+
+	*cnt = 0;
 
 	SetPort(window);
 
@@ -132,29 +130,28 @@ Boolean window_click(EventRecord *evt, short *i)
 	if (double_click) {
 
 		SetPt(&selected_cell, 0, 0);
-		if (LGetSelect(true, &selected_cell, list)) {
-			*i = selected_cell.v;
-			return true;
+		while (LGetSelect(true, &selected_cell, list)) {
+			sel[(*cnt)++] = selected_cell.v++;
+			if (*cnt > 256) return;
 		}
-
 	}
-
-	return false;
 }
 
 /**
  * Gets an item name from the internal list and returns it in the given string.
+ * To protect against future emulator API updates, ensure the string has at least
+ * 64 total bytes of storage.
  *
  * @param item  the item number (i.e. list vertical index) to fetch.
  * @param str   address of string to store the result in.
  */
-void window_get_item_name(short item, Str255 str)
+void window_get_item_name(short item, unsigned char *str)
 {
 	Point p;
 	short l;
 
 	SetPt(&p, 0, item);
-	l = 256;
+	l = 63;
 	LGetCell(&(str[1]), &l, p, list);
 	str[0] = l & 0xFF;
 }
@@ -204,6 +201,11 @@ void window_populate(short mode, Handle h, short len)
 {
 	emu_populate_list(list, h, len);
 	content_type = mode;
+	if (mode == 0) {
+		(*list)->selFlags = lUseSense | lNoRect | lNoExtend;
+	} else {
+		(*list)->selFlags = lOnlyOne;
+	}
 	window_text(0);
 }
 
