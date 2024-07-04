@@ -66,6 +66,38 @@ void busy_cursor(void)
 }
 
 /**
+ * Centers the given window onto the main graphics device.
+ *
+ * @param window  the window to center.
+ */
+void center_window(WindowPtr window)
+{
+	GrafPtr old_port;
+	GDHandle gd;
+	Rect r;
+	short x, y;
+
+	gd = GetMainDevice();
+	r = (*gd)->gdRect;
+	x = (r.right - r.left) / 2;
+	y = (r.bottom - r.top) / 2;
+
+	GetPort(&old_port);
+	SetPort(window);
+
+	r = window->portRect;
+	x = x - (r.right - r.left) / 2;
+	y = y - (r.bottom - r.top) / 2;
+
+	if (x < 20) x = 20;
+	if (y < 20) y = 20;
+
+	MovePortTo(x, y);
+
+	SetPort(old_port);
+}
+
+/**
  * Sets up utility function memory. Should be called once during program init.
  */
 void util_init(void)

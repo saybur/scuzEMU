@@ -176,6 +176,7 @@ Boolean progress_init(void)
 
 	SetPort(window);
 	bounds = window->portRect;
+	center_window(window);
 
 	SetRect(&progress_bar, bounds.left + 10,
 			bounds.top + 56,

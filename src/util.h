@@ -20,6 +20,7 @@
 void alert_single(short res_id, short str_id);
 void alert_dual(short res_id, short str_id, short code);
 void busy_cursor(void);
+void center_window(WindowPtr window);
 void str_load(short list_id, short index, unsigned char *tmp, unsigned char *str, short mlen);
 
 void util_init(void);
