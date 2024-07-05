@@ -104,7 +104,6 @@ static void do_xfer_stop()
 		transfer_end();
 		progress_show(false);
 		window_text(0);
-		SysBeep(1);
 	}
 }
 
@@ -257,7 +256,7 @@ void do_in_content_window(EventRecord *evt)
 			emu_mount(scsi_id, items[0]);
 			SetCursor(&arrow);
 		} else {
-			if (transfer_start(scsi_id, items, itemcnt)) {
+			if (transfer_start(scsi_id, items, &itemcnt)) {
 				xfer_active = true;
 				GetIndString(str, STR_GENERAL, STRI_GEN_DOWNLOAD);
 				window_text(str);

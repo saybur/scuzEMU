@@ -31,7 +31,7 @@ static short scsi_id;
 static Handle data;
 static short *items_ptr;
 static short items_cur, items_count, vref;
-static Boolean session, error;
+static Boolean session, error, repl_dup;
 
 /* transaction remaining, for progress tracking; in file blocks */
 static long tblks, tprog;
@@ -60,6 +60,68 @@ static void transfer_alert_ferr(short err)
 }
 
 /**
+ * Checks the output directory for file name duplicates. If any are
+ * found, the user is asked if they want to overwrite them:
+ *
+ * - If yes, this will just check that all filenames are OK.
+ * - If no, then this will prune out entries with duplicate file names
+ *   and not execute a transfer on those files.
+ *
+ * This needs items_ptr, items_count, and vref set. repl_dup is
+ * updated by this call.
+ *
+ * @return  non-zero of an osErr was raised during the process.
+ */
+static short transfer_check_duplicates(void)
+{
+	short i, err;
+	Str63 f;
+	FInfo fi;
+	Boolean user_asked;
+
+	repl_dup = false;
+	user_asked = false;
+
+	i = 0;
+	while (i < items_count) {
+
+		/* fetch expected user item */
+		window_get_item_name(items_ptr[i], f);
+
+		if (err = GetFInfo(f, vref, &fi)) {
+			if (err == fnfErr) {
+				/* expected, file does not exist, move to next */
+				i++;
+			} else {
+				/* a real error, bail out */
+				return err;
+			}
+		} else {
+			/* no error, aka file exists; keep going to check filenames */
+			if (! user_asked) {
+				repl_dup = CautionAlert(ALRT_DUPLICATES, 0) == 2;
+				user_asked = true;
+			}
+
+			/*
+			 * If the user indicated they want to replace duplicates,
+			 * all is fine, we'll let that happen during the file creation
+			 * process. If they don't want to replace we need to prune out
+			 * duplicate items in the listing.
+			 */
+			if (repl_dup) {
+				i++;
+			} else {
+				arr_del_short(items_ptr, items_count, i);
+				items_count--;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/**
  * Handles opening a transfer file for writing. This needs the volume/directory
  * reference pre-set, and will set the per-file variables upon return.
  *
@@ -85,8 +147,7 @@ static Boolean transfer_file_open(short item)
 
 	if (err = Create(fname, vref, '????', '????')) {
 
-/* FIXME this should really ask the user if they're OK overwriting! */
-		if (err == dupFNErr) {
+		if (err == dupFNErr && repl_dup) {
 
 			/* handle by deleting existing file and trying creation again */
 			if (err = FSDelete(fname, vref)) {
@@ -164,14 +225,16 @@ void transfer_init(void)
  *
  * @param scsi   the SCSI ID to work with.
  * @param items  the item number(s) to pull out of the list.
- * @param icnt   the number of items in the above list.
+ * @param icnt   set to the number of items in the above list, will be
+ *               set to the actual number of items upon non-error return.
  * @return       true if the starting process went OK, false otherwise.
  */
-Boolean transfer_start(short scsi, short *items, short icnt)
+Boolean transfer_start(short scsi, short *items, short *icnt)
 {
 	Point p;
 	SFReply out;
-	short i, t;
+	short i, t, err;
+	Boolean dup;
 
 	/* TODO be noiser, this is probably a programming error */
 	if (session) return false;
@@ -180,17 +243,35 @@ Boolean transfer_start(short scsi, short *items, short icnt)
 	fopen = false;
 
 	/* store item indexing information */
-	if (icnt <= 0) {
+	if (*icnt <= 0) {
 		/* TODO be noiser, this is probably a programming error */
+		*icnt = 0;
 		return;
 	}
-	items_count = icnt;
+	items_count = *icnt;
 	items_cur = 0;
 	if (!(items_ptr = (short *) NewPtr(items_count * 2))) {
 		StopAlert(ALRT_MEM_ERROR, 0);
 		return false;
 	}
 	BlockMove(items, (Ptr) items_ptr, items_count * 2);
+
+	/*
+	 * Use a generic placeholder. As a TODO, this should probably use
+	 * SFPPutFile and a directory selector instead.
+	 */
+	SetPt(&p, 20, 20);
+	SFPutFile(p, "\pSave File To...", "\p<Here>", 0, &out);
+	if (! out.good) {
+		goto transfer_start_fail;
+	}
+	vref = out.vRefNum;
+
+	/* find file collisions, trim if appropriate */
+	if (err = transfer_check_duplicates()) {
+		transfer_alert_ferr(err);
+		goto transfer_start_fail;
+	}
 
 	/* calculate the full duration of this transfer */
 	tblks = 0;
@@ -204,27 +285,14 @@ Boolean transfer_start(short scsi, short *items, short icnt)
 	}
 	if (tblks < 1) tblks = 1; /* div by 0 safety */
 
-	/*
-	 * Use a generic placeholder. As a TODO, this should probably use
-	 * SFPPutFile and a directory selector instead.
-	 */
-	SetPt(&p, 20, 20);
-	SFPutFile(p, "\pSave File To...", "\p<Here>", 0, &out);
-
-	if (out.good) {
-		vref = out.vRefNum;
-
-		/* now we are active; reserve memory and track for future */
-		if (!(data = NewHandle(XFER_BUF_SIZE))) {
-			StopAlert(ALRT_MEM_ERROR, 0);
-			goto transfer_start_fail;
-		} else {
-			session = true;
-			return true;
-		}
-
-	} else {
+	/* now we are active; reserve memory and track for future */
+	if (!(data = NewHandle(XFER_BUF_SIZE))) {
+		StopAlert(ALRT_MEM_ERROR, 0);
 		goto transfer_start_fail;
+	} else {
+		session = true;
+		*icnt = items_count;
+		return true;
 	}
 
 /* for failures after index pointer init */

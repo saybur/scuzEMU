@@ -145,6 +145,19 @@ data 'DITL' (131, "No Files Returned") {
 	$"696C 6573 2069 6E20 6974 2E00"                      /* iles in it.. */
 };
 
+data 'DITL' (132, "Duplicate Files") {
+	$"0002 0000 0000 0057 00FC 006B 0136 0402"            /* .......W...k.6.. */
+	$"4E6F 0000 0000 0057 00B5 006B 00EF 0403"            /* No.....W.µ.k.... */
+	$"5965 7320 0000 0000 000A 0054 004A 0136"            /* Yes .......T.J.6 */
+	$"886C 4F6E 6520 6F72 206D 6F72 6520 6669"            /* àlOne or more fi */
+	$"6C65 7320 696E 2074 6865 2074 6172 6765"            /* les in the targe */
+	$"7420 6469 7265 6374 6F72 7920 6861 7665"            /* t directory have */
+	$"206D 6174 6368 696E 6720 6669 6C65 206E"            /*  matching file n */
+	$"616D 6573 2E20 576F 756C 6420 796F 7520"            /* ames. Would you  */
+	$"6C69 6B65 2074 6F20 6F76 6572 7772 6974"            /* like to overwrit */
+	$"6520 7468 6F73 6520 6669 6C65 733F"                 /* e those files? */
+};
+
 data 'ALRT' (128, "About") {
 	$"0030 0020 00F2 016E 0080 4444"                      /* .0. ...n.ÄDD */
 };
@@ -179,6 +192,10 @@ data 'ALRT' (130, "No Images Returned") {
 
 data 'ALRT' (131, "No Files Returned") {
 	$"0028 0028 009D 0168 0083 5555"                      /* .(.(.ù.h.ÉUU */
+};
+
+data 'ALRT' (132, "Duplicate Files") {
+	$"0028 0028 009D 0168 0084 5555"                      /* .(.(.ù.h.ÑUU */
 };
 
 data 'ICON' (128) {

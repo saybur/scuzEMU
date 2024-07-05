@@ -55,6 +55,22 @@ void alert_dual(short res_id, short str_id, short code)
 	StopAlert(res_id, 0L);
 }
 
+/**
+ * Deletes an item from an array of shorts, shifting remaining entries.
+ *
+ * @param arr  an array of shorts.
+ * @param len  the length of the array.
+ * @param itm  the item to remove.
+ */
+void arr_del_short(short *arr, short len, short itm)
+{
+	short i;
+
+	for (i = itm + 1; i < len; i++) {
+		arr[i - 1] = arr[i];
+	}
+}
+
 static Cursor busy_curs;
 
 /**
