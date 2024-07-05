@@ -519,7 +519,7 @@ data 'BNDL' (128) {
 };
 
 data 'scuz' (0, "Owner resource") {
-	$"0B73 6375 7A45 4D55 2030 2E31"                      /* .scuzEMU 0.1 */
+	$"0B73 6375 7A45 4D55 2030 2E32"                      /* .scuzEMU 0.2 */
 };
 
 data 'FREF' (128) {

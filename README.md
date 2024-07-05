@@ -28,11 +28,10 @@ How To Use This Program
 -----------------------
 
 1. Start the application by double-clicking the scuzEMU program.
-2. Go to File->Open.
-3. Choose the SCSI ID you have your emulator configured to use.
-4. Choose whether you want to download files or change images.
-5. Press OK.
-6. Double-click an item to either download it (in files mode) or change to that
+2. Choose the SCSI ID you have your emulator configured to use.
+3. Choose whether you want to download files or change images.
+4. Press OK.
+5. Double-click an item to either download it (in files mode) or change to that
    image (in images mode).
 
 When switching images, you will still need to drag the current image to the
@@ -57,8 +56,6 @@ The following issues are known to exist in this application:
 * Keyboard arrows / enter key are not handled by the file/image list.
 * Uploading files is unimplemented (I haven't decided if this would be useful
   or not).
-* Downloading files can only be done one at a time. The intention is to remove
-  this limitation and permit bulk downloading when possible.
 * Ejecting disks has to be done by the user. It should be possible to integrate
   that step into the application, at least in most circumstances.
 * Some graphical elements are missing.
@@ -99,6 +96,14 @@ possible. See www.opensource.org for details.
 
 Changelog
 ---------
+
+Major changes in each release:
+
+### 0.2
+
+- Multiple files per download are now supported.
+- Added progress bar dialog for transfers.
+- List of files/images will always be alphabetized.
 
 ### 0.1
 
