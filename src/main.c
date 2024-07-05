@@ -436,6 +436,10 @@ int main(void)
 	open_type = 0;
 
 	FlushEvents(everyEvent, 0);
+
+	/* prompt open on app start */
+	do_open();
+
 	while (true) {
 
 		if (wneAvail) {
