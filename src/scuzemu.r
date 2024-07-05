@@ -132,6 +132,19 @@ data 'DITL' (130, "No Images Returned") {
 	$"6669 6C65 7320 696E 2069 742E"                      /* files in it. */
 };
 
+data 'DITL' (131, "No Files Returned") {
+	$"0001 0000 0000 0057 00FC 006B 0136 0402"            /* .......W...k.6.. */
+	$"4F4B 0000 0000 000A 0054 004A 0136 887B"            /* OK.......T.J.6à{ */
+	$"4465 7669 6365 2072 6573 706F 6E64 6564"            /* Device responded */
+	$"2077 6974 6820 616E 2065 6D70 7479 2066"            /*  with an empty f */
+	$"696C 6520 6C69 7374 2E20 5665 7269 6679"            /* ile list. Verify */
+	$"2061 2064 6972 6563 746F 7279 2063 616C"            /*  a directory cal */
+	$"6C65 6420 2273 6861 7265 6422 2065 7869"            /* led "shared" exi */
+	$"7374 7320 6F6E 2074 6865 206D 656D 6F72"            /* sts on the memor */
+	$"7920 6361 7264 2061 6E64 2068 6173 2066"            /* y card and has f */
+	$"696C 6573 2069 6E20 6974 2E00"                      /* iles in it.. */
+};
+
 data 'ALRT' (128, "About") {
 	$"0030 0020 00F2 016E 0080 4444"                      /* .0. ...n.ÄDD */
 };
@@ -162,6 +175,10 @@ data 'ALRT' (129, "Image Change") {
 
 data 'ALRT' (130, "No Images Returned") {
 	$"0028 0028 009D 0168 0082 5555"                      /* .(.(.ù.h.ÇUU */
+};
+
+data 'ALRT' (131, "No Files Returned") {
+	$"0028 0028 009D 0168 0083 5555"                      /* .(.(.ù.h.ÉUU */
 };
 
 data 'ICON' (128) {

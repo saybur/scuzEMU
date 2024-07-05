@@ -167,15 +167,26 @@ void do_open(void)
 		if (err = scsi_list_files(scsi_id, open_type, &h, &length)) {
 			alert_dual(ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
 		} else {
-			count = window_populate(open_type, h, length);
-			DisposHandle(h);
+			if (length <= 0) {
+				count = 0;
+				/* handle never allocated, do not discard */
+			} else {
+				count = window_populate(open_type, h, length);
+				DisposHandle(h);
+			}
+
 			SetCursor(&arrow);
 			if (count > 0) {
 				window_show(true);
 			} else {
-				NumToString(scsi_id, ns);
-				ParamText(ns, 0, 0, 0);
-				NoteAlert(ALRT_NO_IMAGES, 0);
+				if (open_type) {
+					NumToString(scsi_id, ns);
+					ParamText(ns, 0, 0, 0);
+					NoteAlert(ALRT_NO_IMAGES, 0);
+				} else {
+					/* no need to report ID, shared dir is global */
+					NoteAlert(ALRT_NO_FILES, 0);
+				}
 			}
 		}
 	}

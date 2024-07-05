@@ -144,7 +144,7 @@ static void scsi_init_cdb(char *arr)
  * Returns 0 on success. If nonzero, high byte has failure type and low byte has
  * failure code. On success the provided pointer will be set to a new Handle,
  * itself set to a chunk of memory equal to 40 bytes times the size of the
- * populated length.
+ * populated length, if and only if the length below is greater than zero.
  *
  * @param scsi_id    device ID on [0, 6].
  * @param open_type  zero for files, non-zero for images
@@ -173,6 +173,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 	}
 
 	*length = 40 * data_len;
+	if (*length <= 0) return 0;
 	if (!(h = NewHandle(*length))) {
 		return 0x70001;
 	}
