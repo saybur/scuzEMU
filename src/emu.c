@@ -101,7 +101,7 @@ short emu_populate_list(ListHandle list, Handle data, short data_len)
 	if (! (offsets = (short *) NewPtr(rcnt * 2))) {
 		HUnlock(data);
 		StopAlert(ALRT_MEM_ERROR, 0);
-		return;
+		return 0;
 	}
 	LAddRow(rcnt, 0, list);
 
@@ -160,6 +160,8 @@ short emu_populate_list(ListHandle list, Handle data, short data_len)
 
 	DisposPtr((Ptr) offsets);
 	HUnlock(data);
+
+	return emu_count;
 }
 
 /**

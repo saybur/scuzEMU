@@ -196,10 +196,13 @@ void window_grow(Point p)
  * @param mode  the kind of data being assigned, per above.
  * @param h     block of data to parse in emu_populate_list().
  * @param len   length of above data.
+ * @return      the number of entries found in the list.
  */
-void window_populate(short mode, Handle h, short len)
+short window_populate(short mode, Handle h, short len)
 {
-	emu_populate_list(list, h, len);
+	short num;
+
+	num = emu_populate_list(list, h, len);
 	content_type = mode;
 	if (mode == 0) {
 		(*list)->selFlags = lUseSense | lNoRect | lNoExtend;
@@ -207,6 +210,7 @@ void window_populate(short mode, Handle h, short len)
 		(*list)->selFlags = lOnlyOne;
 	}
 	window_text(0);
+	return num;
 }
 
 /**

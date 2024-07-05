@@ -156,7 +156,8 @@ void do_open(void)
 {
 	Handle h;
 	long err;
-	short length;
+	short length, count;
+	Str15 ns;
 
 	if (dialog_open(&scsi_id, &open_type)) {
 
@@ -166,10 +167,16 @@ void do_open(void)
 		if (err = scsi_list_files(scsi_id, open_type, &h, &length)) {
 			alert_dual(ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
 		} else {
-			window_populate(open_type, h, length);
+			count = window_populate(open_type, h, length);
 			DisposHandle(h);
 			SetCursor(&arrow);
-			window_show(true);
+			if (count > 0) {
+				window_show(true);
+			} else {
+				NumToString(scsi_id, ns);
+				ParamText(ns, 0, 0, 0);
+				NoteAlert(ALRT_NO_IMAGES, 0);
+			}
 		}
 	}
 }

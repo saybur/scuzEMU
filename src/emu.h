@@ -19,7 +19,7 @@
 
 void emu_init(void);
 Boolean emu_get_info(short item, short *index, long* size);
-void emu_populate_list(ListHandle list, Handle data, short length);
+short emu_populate_list(ListHandle list, Handle data, short length);
 void emu_mount(short scsi_id, short item);
 
 #endif /* __EMU__ */
