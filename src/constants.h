@@ -42,6 +42,10 @@
 #define ALRT_NO_IMAGES      130
 #define ALRT_NO_FILES       131
 #define ALRT_DUPLICATES     132
+#define ALRT_IMG_NO_DEV     133
+#define ALRT_IMG_CHNG_BSY   134
+#define ALRT_IMG_VCHNG_ERR  135
+#define ALRT_IMG_EJECT_ERR  136
 #define ALRT_GENERIC        256
 #define ALRT_BAD_VERSION    257
 #define ALRT_SCSI_ERROR     258

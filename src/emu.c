@@ -23,6 +23,116 @@ short emu_index[MAXIMUM_FILES];
 long emu_sizes[MAXIMUM_FILES];
 
 /**
+ * Perform an ejection of the device at the given SCSI ID.
+ *
+ * Getting from SCSI ID down to the mounted volume has some steps, and I'm
+ * not 100% sure the below code captures all possibilities. That said, here's
+ * a rough overview of the process involved:
+ *
+ * 1) Get IO ref num, which is -(32+SCSI_ID)-1 (noted in DV18).
+ * 2) Check if a matching device is present; if not, it's probably a sign that
+ *    no driver is loaded, so there's no point in trying to eject.
+ * 3) If a drive does exist, try to find the matching volume. This may not exist
+ *    either, but that could be because there isn't a HFS volume to mount on it.
+ * 4) Assuming a volume exists, unmount it.
+ * 5) Regardless if a volume exists, call into the driver and eject the disk.
+ * 6) Wait for a bit to allow the OS to update everything.
+ *
+ * This will pop up messages to the user that try to let them know if something
+ * goes awry.
+ *
+ * Trying to eject at the volume level doesn't seem to execute the required
+ * re-insertion code on the emulator I'm using to test, you do need to call into
+ * the driver for that to happen. Apparently.
+ *
+ * Input on any of this would be appreciated, I feel like this is an area where
+ * I'm missing something obvious within the OS.
+ *
+ * @param scsi_id  the SCSI ID to try to eject.
+ * @return         true if ejection succeeded, false otherwise.
+ */
+static Boolean emu_eject(short scsi_id)
+{
+	QHdrPtr qhp;
+	DrvQEl *qep;
+	short iref, dnum, vref, err;
+	long free;
+	Str31 s;
+	CntrlParam *ctrlp;
+	unsigned char *diskstate;
+
+	/* see if a physical drive matches the ID */
+	iref = -33 - scsi_id;
+	dnum = 0;
+	qhp = GetDrvQHdr();
+	qep = (DrvQEl *) qhp->qHead;
+	do {
+		if (qep->dQRefNum == iref) {
+			dnum = qep->dQDrive;
+			break;
+		}
+
+		qep = (DrvQEl *) qep->qLink;
+	} while (qep);
+	if (! dnum) {
+		SetCursor(&arrow);
+		StopAlert(ALRT_IMG_NO_DEV, 0);
+		return false;
+	}
+
+	/* store information about whether a disk is present */
+	diskstate = (unsigned char *) qep;
+	diskstate -= 3;
+
+	/* using drive ID, try to find a volume */
+	err = GetVInfo(dnum, s, &vref, &free);
+	if (err == 0) {
+		/* found a volume, try to unmount it */
+		if (err = UnmountVol(0, vref)) {
+			if (err == fBsyErr) {
+				/* files are open; common enough we have a special alert for it */
+				SetCursor(&arrow);
+				CautionAlert(ALRT_IMG_CHNG_BSY, 0);
+				return false;
+			} else if (err == 0) {
+				/* success */
+			} else {
+				SetCursor(&arrow);
+				NumToString(err, s);
+				ParamText(s, 0, 0, 0);
+				StopAlert(ALRT_IMG_VCHNG_ERR, 0);
+				return false;
+			}
+		}
+	} else {
+		/* assume no matching volume; not necessarily a problem for non-native disks */
+	}
+
+	/* tell the driver to eject */
+	ctrlp = (CntrlParam *) NewPtrClear(sizeof(CntrlParam));
+	if (! ctrlp) {
+		StopAlert(ALRT_MEM_ERROR, 0);
+		return false;
+	}
+	ctrlp->ioCRefNum = iref;
+	ctrlp->csCode = 7; /* csEject? */
+	err = PBControl((ParmBlkPtr) ctrlp, 0);
+	DisposPtr((Ptr) ctrlp);
+	if (err) {
+		SetCursor(&arrow);
+		NumToString(err, s);
+		ParamText(s, 0, 0, 0);
+		StopAlert(ALRT_IMG_EJECT_ERR, 0);
+	} else {
+		/* wait for the driver to report ejection clear */
+		while (*diskstate >= 0xFC);
+	}
+
+	/* finally report back */
+	return err == 0;
+}
+
+/**
  * Sets up the emulator processing / tracking logic. Mostly a placeholder.
  */
 void emu_init(void)
@@ -180,11 +290,10 @@ void emu_mount(short scsi_id, short item)
 		if (err = scsi_set_image(scsi_id, index)) {
 			alert_dual(ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
 		} else {
+			emu_eject(scsi_id);
 			SetCursor(&arrow);
-			NoteAlert(ALRT_IMAGE_CHANGE, 0);
 		}
 	} else {
-		SetCursor(&arrow);
 		alert_single(ALRT_GENERIC, 2);
 	}
 }
