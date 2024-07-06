@@ -54,12 +54,13 @@
  * "Low level" reading operation against a SCSI target.
  *
  * @param scsi_id  device ID on [0, 6].
- * @param *op      pointer to 10-byte char array of the CDB to send.
+ * @param *op      pointer to CDB array to send.
+ * @param op_len   length of the CDB array.
  * @param data     address of pointer to write bytes into during reading.
  * @param length   number of data bytes to read, or zero to skip reading.
  * @return         error code, or zero for success.
  */
-static long scsi_read(short scsi_id, char *op, long data, short length)
+static long scsi_read(short scsi_id, char *op, short op_len, long data, short length)
 {
 	SCSIInstr inst[2];
 	long fail;
@@ -77,7 +78,7 @@ static long scsi_read(short scsi_id, char *op, long data, short length)
 		return fail;
 	}
 
-	if (fail = SCSICmd(op, 10)) {
+	if (fail = SCSICmd(op, op_len)) {
 		/* command failed, need to clear condition */
 		fail |= 0x30000;
 		goto scsi_read_cleanup;
@@ -129,6 +130,48 @@ static void scsi_init_cdb(char *arr)
 }
 
 /**
+ * Performs a simplistic REQUEST SENSE against a SCSI target. The response
+ * is stored in condensed format in the given long, with the high 8 bytes 0x00,
+ * next 8 the sense key, then the ASC, then the ASCQ.
+ *
+ * This only supports error code 0x70, if a different code is present this
+ * will set the response to -1.
+ *
+ * @param scsi_id  device ID on [0, 6].
+ * @param sense    address of long to recieve the information above.
+ * @return         error code, or zero for success.
+ */
+static long scsi_request_sense(short scsi_id, long *sense)
+{
+	unsigned char cdb[6];
+	unsigned char rs[18];
+	long err;
+
+	cdb[0] = 0x03;
+	cdb[1] = 0;
+	cdb[2] = 0;
+	cdb[3] = 0;
+	cdb[4] = sizeof(rs);
+	cdb[5] = 0;
+
+	if (err = scsi_read(scsi_id, (char *) cdb, sizeof(cdb), (long) &rs, sizeof(rs))) {
+		*sense = -1;
+		return err;
+	}
+
+	/* check valid bit and if code is 0x70 */
+	if (rs[0] != 0xF0) {
+		*sense = -1;
+		return 0;
+	}
+
+	*sense = ((long) (rs[2] & 0x0F) << 16)
+			+ ((long) rs[12] << 8)
+			+ (long) rs[13];
+	return 0;
+}
+
+/**
  * Queries a SCSI emulator and asks for a list of available items.
  *
  * To list files requires 2 sequential commands:
@@ -158,7 +201,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 	char cdb[10];
 	Handle h;
 	unsigned char data_len;
-	long fail;
+	long fail, sense;
 
 	scsi_init_cdb(cdb);
 	if (open_type) {
@@ -167,8 +210,8 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 		cdb[0] = 0xD2;
 	}
 
-	if (fail = scsi_read(scsi_id, cdb, (long) &data_len, 1)) {
-/* FIXME do REQUEST SENSE */
+	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), (long) &data_len, 1)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
 	}
 
@@ -185,7 +228,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 	}
 
 	HLock(h);
-	if (fail = scsi_read(scsi_id, cdb, (long) *h, *length)) {
+	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), (long) *h, *length)) {
 		/* attempt to read listing failed */
 		/* TODO probably should make it clear which call failed */
 		HUnlock(h);
@@ -224,7 +267,7 @@ long scsi_read_file(short scsi_id, short index, long offset, char *data, short l
 	cdb[4] = (offset >> 8) & 0xFF;
 	cdb[5] = offset & 0xFF;
 
-	if (fail = scsi_read(scsi_id, cdb, (long) data, length)) {
+	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), (long) data, length)) {
 		return fail;
 	}
 
@@ -244,14 +287,15 @@ long scsi_read_file(short scsi_id, short index, long offset, char *data, short l
 long scsi_set_image(short scsi_id, short index)
 {
 	char cdb[10];
-	long fail;
+	long fail, sense;
+	short i;
 
 	scsi_init_cdb(cdb);
 	cdb[0] = 0xD8;
 	cdb[1] = index; /* upgrade if >255 support arrives */
 
-	if (fail = scsi_read(scsi_id, cdb, 0, 0)) {
-/* FIXME do REQUEST SENSE */
+	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), 0, 0)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result for now */
 		return fail;
 	}
 
