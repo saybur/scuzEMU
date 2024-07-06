@@ -193,7 +193,7 @@ void do_open(void)
 
 void do_quit(void)
 {
-/* FIXME implement something more formal here */
+	do_xfer_stop();
 	ExitToShell();
 }
 
