@@ -53,12 +53,13 @@ static void transfer_alert_ferr(short err)
 {
 	short esi;
 
-	/* fetch appropriate STR# for the error and show it */
+	/* get appropriate STR# index for osErr */
 	esi = (err + 31) * -1;
 	if (esi < 1 || esi > 30) {
 		esi = 1;
 	}
-	alert_dual(ALRT_FILE_ERROR, esi, err);
+
+	alert_template_error(0, ALRT_FILE_ERROR, esi, err);
 }
 
 /**
@@ -77,6 +78,7 @@ static void transfer_alert_ferr(short err)
 static short transfer_check_duplicates(void)
 {
 	short i, err;
+/* FIXME dynamic alloc */
 	Str63 f;
 	FInfo fi;
 	Boolean user_asked;
@@ -137,11 +139,7 @@ static Boolean transfer_file_open(short item)
 	short err;
 
 	if (!emu_get_info(item, &findex, &fsize)) {
-		alert_single(ALRT_GENERIC, 1);
-		return false;
-	}
-	if (!emu_get_info(item, &findex, &fsize)) {
-		alert_single(ALRT_GENERIC, 1);
+		alert_template(0, ALRT_GENERIC, STRI_GA_NSF);
 		return false;
 	}
 
@@ -265,8 +263,7 @@ Boolean transfer_start(short scsi, short *items, short *icnt)
 	items_count = *icnt;
 	items_cur = 0;
 	if (!(items_ptr = (short *) NewPtr(items_count * 2))) {
-		StopAlert(ALRT_MEM_ERROR, 0);
-		return false;
+		mem_fail();
 	}
 	BlockMove(items, (Ptr) items_ptr, items_count * 2);
 
@@ -292,7 +289,7 @@ Boolean transfer_start(short scsi, short *items, short *icnt)
 	tprog = 0;
 	for (i = 0; i < items_count; i++) {
 		if (!emu_get_info(items_ptr[i], &t, &fsize)) {
-			alert_single(ALRT_GENERIC, 1);
+			alert_template(0, ALRT_GENERIC, STRI_GA_NSF);
 			goto transfer_start_fail;
 		}
 		tblks += fsize / XFER_BUF_SIZE + 1;
@@ -301,8 +298,7 @@ Boolean transfer_start(short scsi, short *items, short *icnt)
 
 	/* now we are active; reserve memory and track for future */
 	if (!(data = NewHandle(XFER_BUF_SIZE))) {
-		StopAlert(ALRT_MEM_ERROR, 0);
-		goto transfer_start_fail;
+		mem_fail();
 	} else {
 		session = true;
 		*icnt = items_count;
@@ -375,7 +371,7 @@ Boolean transfer_tick(void)
 	/* perform data exchange */
 	HLock(data);
 	if (err = scsi_read_file(scsi_id, findex, fblk, *data, (short) xfer)) {
-		alert_dual(ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+		alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
 	} else if (err = FSWrite(fref, &xfer, *data)) {
 		transfer_alert_ferr(err);
 	}

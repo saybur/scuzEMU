@@ -14,45 +14,99 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-static Str255 es0;
-static Str63 es1;
+#include "util.h"
+
+static void (*quit_func)(void);
+static Cursor busy_curs;
 
 /**
- * Presents a formatted StopAlert to the user with a message.
+ * Presents an alert using the given ALRT resource, with a message contained in a
+ * STR# resource with a matching ID.
  *
- * This needs an 'ALRT' and 'STR#' with the same resource ID, which will be shown with the
- * given string ID as "^0". This also resets the cursor to an arrow.
+ * This provides a simple way to create alert templates without having to build a
+ * dedicated ALRT. The "^0" will be replaced with the string at the given index in
+ * the STR# resource.
  *
- * @param res_id  the resource to pull.
- * @param str_id  the string within the 'STR#' to insert.
+ * @param type    type of alert to use, 0 for default (StopAlert).
+ * @param res_id  the ALRT and STR# resources to pull from.
+ * @param str_id  the string ID within the resource to get.
  */
-void alert_single(short res_id, short str_id)
+void alert_template(short type, short res_id, short str_id)
 {
+	unsigned char *s;
+
+	if (! (s = (unsigned char *) NewPtr(256))) {
+		mem_fail();
+	}
+
+	/* load the error message */
+	GetIndString(s, res_id, str_id);
+
+	/* show message */
 	SetCursor(&arrow);
-	GetIndString(es0, res_id, str_id);
-	ParamText(es0, 0, 0, 0);
-	StopAlert(res_id, 0L);
+	ParamText(s, 0, 0, 0);
+	switch (type)
+	{
+	case ATYPE_CAUTION:
+		CautionAlert(res_id, 0);
+		break;
+	case ATYPE_NOTE:
+		NoteAlert(res_id, 0);
+		break;
+	default:
+		StopAlert(res_id, 0);
+	}
+
+	DisposPtr((Ptr) s);
 }
 
 /**
- * Presents a formatted StopAlert to the user with a message and an error code for later
- * debugging.
+ * Presents an alert using the given ALRT resource, with a message contained in a
+ * STR# resource with a matching ID, and a given error code.
  *
- * This needs an 'ALRT' and 'STR#' with the same resource ID, which will be shown with the
- * given string ID as "^0" and the given code as "^1". This also resets the cursor to an
- * arrow.
+ * This is the same as the above call, except that "^1" will be replaced by a
+ * rendered error code.
  *
- * @param res_id  the resource to pull.
- * @param str_id  the string within the 'STR#' to insert.
- * @param code    the error code to format and add.
+ * @param type    type of alert to use, 0 for default (StopAlert).
+ * @param res_id  the ALRT and STR# resources to pull from.
+ * @param str_id  the string ID within the resource to get.
+ * @param err     the error code to render.
  */
-void alert_dual(short res_id, short str_id, short code)
+void alert_template_error(short type, short res_id, short str_id, short err)
 {
+	unsigned char *s;
+	Str15 is;
+
+	if (! (s = (unsigned char *) NewPtr(256))) {
+		mem_fail();
+	}
+
+	/* load the error message */
+	GetIndString(s, res_id, str_id);
+
+	/* render error num surround with " (num)"; string size should be OK */
+	NumToString(err, &(is[2]));
+	is[0] = is[2] + 3;
+	is[1] = ' ';
+	is[2] = '(';
+	is[is[0]] = ')';
+
+	/* show message */
 	SetCursor(&arrow);
-	GetIndString(es0, res_id, str_id);
-	NumToString(code, es1);
-	ParamText(es0, es1, 0, 0);
-	StopAlert(res_id, 0L);
+	ParamText(s, is, 0, 0);
+	switch (type)
+	{
+	case ATYPE_CAUTION:
+		CautionAlert(res_id, 0);
+		break;
+	case ATYPE_NOTE:
+		NoteAlert(res_id, 0);
+		break;
+	default:
+		StopAlert(res_id, 0);
+	}
+
+	DisposPtr((Ptr) s);
 }
 
 /**
@@ -71,8 +125,6 @@ void arr_del_short(short *arr, short len, short itm)
 	}
 }
 
-static Cursor busy_curs;
-
 /**
  * One-line call to change the cursor to show the stopwatch symbol.
  */
@@ -82,7 +134,7 @@ void busy_cursor(void)
 }
 
 /**
- * Centers the given window onto the main graphics device.
+ * Centers the given window on the main graphics device.
  *
  * @param window  the window to center.
  */
@@ -92,6 +144,8 @@ void center_window(WindowPtr window)
 	GDHandle gd;
 	Rect r;
 	short x, y;
+
+	if (! window) return;
 
 	gd = GetMainDevice();
 	r = (*gd)->gdRect;
@@ -114,36 +168,128 @@ void center_window(WindowPtr window)
 }
 
 /**
- * Sets up utility function memory. Should be called once during program init.
+ * @return  true if WaitNextEvent is implemented
  */
-void util_init(void)
+Boolean init_is_wne(void)
 {
-	CursHandle h;
+	long v;
 
-	h = GetCursor(watchCursor);
-	if (h) {
-		HLock((Handle) h);
-		BlockMove(*h, &busy_curs, sizeof(Cursor));
-		HUnlock((Handle) h);
-		DisposHandle((Handle) h);
+	/* check if on Mac Plus or later */
+	if (Gestalt(gestaltMachineType, &v) && v >= 4) {
+		/* see THINK Reference example in WaitNextEvent */
+		return NGetTrapAddress(0xA860, 1) != NGetTrapAddress(0xA89F, 1);
+	} else {
+		return false;
 	}
 }
 
 /**
- * Handles loading length-limited strings from resources. Use when you want a STR# entry
- * but don't have a guaranteed 256 bytes of final storage available.
+ * Performs the usual Mac calls to start up a program and sets up the utility
+ * functions for later use.
  *
- * @param list_id  the STR# to load.
- * @param index    the index within the string list.
- * @param *tmp     pointer to 256 bytes of temporary storage.
- * @param *str     pointer to the resulting string storage.
- * @param size     the data size of the above storage.
+ * @param *quit   pointer to a program quit function for fatal errors, 0 to use a
+ *                default ExitToShell() call.
+ * @param ptrcnt  the number of MoreMasters() invocations desired for the program.
+ * @return        true if successful, false otherwise; this will not invoke the quit
+ *                function on error but it would be wise for the caller to stop the
+ *                program quickly, many things will likely not work on a failed call.
  */
-void str_load(short list_id, short index, unsigned char *tmp, unsigned char *str, short size)
+Boolean init_program(void (*quit)(void), short ptrcnt)
+{
+	short i, err;
+	CursHandle ch;
+
+	InitGraf(&thePort);
+	InitFonts();
+	InitWindows();
+	InitMenus();
+	TEInit();
+	InitDialogs(0L);
+	InitCursor();
+
+	quit_func = 0;
+
+	MaxApplZone();
+	for (i = 0; i < ptrcnt; i++) {
+		MoreMasters();
+		err = MemError();
+		if (err) return false;
+	}
+
+	/* copy the stopwatch cursor locally for later use*/
+	ch = GetCursor(watchCursor);
+	if (ch) {
+		HLock((Handle) ch);
+		BlockMove(*ch, &busy_curs, sizeof(Cursor));
+		HUnlock((Handle) ch);
+		DisposHandle((Handle) ch);
+	}
+
+	/* now OK to assign per contract */
+	quit_func = quit;
+	return true;
+}
+
+/**
+ * Generic memory error routine that should be called when the heap is exhausted
+ * or a Memory Manager error occurs.
+ *
+ * This will post a basic message to the user and call the quit function (or just
+ * ExitToShell()) to terminate the program immediately.
+ */
+void mem_fail(void)
+{
+	StopAlert(ALRT_UTIL_MEM_FAIL, 0);
+	if (quit_func) {
+		quit_func();
+	}
+	ExitToShell();
+}
+
+/**
+ * Scans a Pascal string for instances of '^' and replaces with ' '. Useful for making
+ * sure there are no inadvertent "^0" type components within a string.
+ *
+ * This could be a Munger() call if it were any more complicated (which it is not). It
+ * would be interesting to check if that would be faster here though...
+ *
+ * @param s  the string to check.
+ */
+void repl_caret(unsigned char *s)
+{
+	short i, len;
+
+	if (! s) return;
+
+	len = s[0];
+	for (i = 1; i <= len; i++) {
+		if (s[i] == '^') s[i] = ' ';
+	}
+}
+
+/**
+ * Handles loading strings from resources when the final storage is limited by size.
+ * This will pull the string from the resource and copy it into the storage, truncating
+ * as needed.
+ *
+ * @param id    the STR# to load.
+ * @param idx   the index within the string list.
+ * @param *str  pointer to the resulting string storage.
+ * @param size  the data size (_not_ string length) of the above storage.
+ */
+void str_load(short id, short idx, unsigned char *str, short size)
 {
 	short len;
+	unsigned char* tmp;
 
-	GetIndString(tmp, list_id, index);
+	if (! str) return;
+	if (size <= 0) return;
+
+	if (! (tmp = (unsigned char *) NewPtr(256))) {
+		mem_fail();
+	}
+
+	GetIndString(tmp, id, idx);
 	if (tmp[0] > size - 1) {
 		tmp[0] = size - 1;
 	}
@@ -151,4 +297,6 @@ void str_load(short list_id, short index, unsigned char *tmp, unsigned char *str
 	if (tmp[0] > 0) {
 		BlockMove(tmp, str, tmp[0] + 1);
 	}
+
+	DisposPtr((Ptr) tmp);
 }

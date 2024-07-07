@@ -18,9 +18,9 @@
 #include "scsi.h"
 #include "util.h"
 
-short emu_count;
-short emu_index[MAXIMUM_FILES];
-long emu_sizes[MAXIMUM_FILES];
+static short emu_count;
+static short emu_index[MAXIMUM_FILES];
+static long emu_sizes[MAXIMUM_FILES];
 
 /**
  * Perform an ejection of the device at the given SCSI ID.
@@ -57,9 +57,9 @@ static Boolean emu_eject(short scsi_id)
 	DrvQEl *qep;
 	short iref, dnum, vref, err;
 	long free;
-	Str31 s;
 	CntrlParam *ctrlp;
 	unsigned char *diskstate;
+	unsigned char *fname;
 
 	/* see if a physical drive matches the ID */
 	iref = -33 - scsi_id;
@@ -75,8 +75,7 @@ static Boolean emu_eject(short scsi_id)
 		qep = (DrvQEl *) qep->qLink;
 	} while (qep);
 	if (! dnum) {
-		SetCursor(&arrow);
-		StopAlert(ALRT_IMG_NO_DEV, 0);
+		alert_template(0, ALRT_GENERIC, STRI_GA_NO_DEV);
 		return false;
 	}
 
@@ -84,23 +83,26 @@ static Boolean emu_eject(short scsi_id)
 	diskstate = (unsigned char *) qep;
 	diskstate -= 3;
 
+	/* required for next call, otherwise not useful */
+	if (! (fname = (unsigned char *) NewPtr(28))) {
+		mem_fail();
+	}
+
 	/* using drive ID, try to find a volume */
-	err = GetVInfo(dnum, s, &vref, &free);
+	err = GetVInfo(dnum, fname, &vref, &free);
+	DisposPtr((Ptr) fname);
+
+	/* if a volume was found, try to unmount it */
 	if (err == 0) {
-		/* found a volume, try to unmount it */
 		if (err = UnmountVol(0, vref)) {
 			if (err == fBsyErr) {
-				/* files are open; common enough we have a special alert for it */
-				SetCursor(&arrow);
-				CautionAlert(ALRT_IMG_CHNG_BSY, 0);
+				/* files are open; common enough we have a dedicated message */
+				alert_template(ATYPE_CAUTION, ALRT_GENERIC, STRI_GA_CHNG_BSY);
 				return false;
 			} else if (err == 0) {
 				/* success */
 			} else {
-				SetCursor(&arrow);
-				NumToString(err, s);
-				ParamText(s, 0, 0, 0);
-				StopAlert(ALRT_IMG_VCHNG_ERR, 0);
+				alert_template_error(0, ALRT_GENERIC, STRI_GA_VCHNG_ERR, err);
 				return false;
 			}
 		}
@@ -111,18 +113,14 @@ static Boolean emu_eject(short scsi_id)
 	/* tell the driver to eject */
 	ctrlp = (CntrlParam *) NewPtrClear(sizeof(CntrlParam));
 	if (! ctrlp) {
-		StopAlert(ALRT_MEM_ERROR, 0);
-		return false;
+		mem_fail();
 	}
 	ctrlp->ioCRefNum = iref;
 	ctrlp->csCode = 7; /* csEject? */
 	err = PBControl((ParmBlkPtr) ctrlp, 0);
 	DisposPtr((Ptr) ctrlp);
 	if (err) {
-		SetCursor(&arrow);
-		NumToString(err, s);
-		ParamText(s, 0, 0, 0);
-		StopAlert(ALRT_IMG_EJECT_ERR, 0);
+		alert_template_error(0, ALRT_GENERIC, STRI_GA_EJECT_ERR, err);
 	} else {
 		/* wait for the driver to report ejection clear */
 		while (*diskstate >= 0xFC);
@@ -210,8 +208,7 @@ short emu_populate_list(ListHandle list, Handle data, short data_len)
 	/* reserve space for tracking valid data offsets and list cells */
 	if (! (offsets = (short *) NewPtr(rcnt * 2))) {
 		HUnlock(data);
-		StopAlert(ALRT_MEM_ERROR, 0);
-		return 0;
+		mem_fail();
 	}
 	LAddRow(rcnt, 0, list);
 
@@ -288,12 +285,12 @@ void emu_mount(short scsi_id, short item)
 	if (item < emu_count) {
 		index = emu_index[item];
 		if (err = scsi_set_image(scsi_id, index)) {
-			alert_dual(ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+			alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
 		} else {
 			emu_eject(scsi_id);
 			SetCursor(&arrow);
 		}
 	} else {
-		alert_single(ALRT_GENERIC, 2);
+		alert_template(0, ALRT_GENERIC, STRI_GA_NSI);
 	}
 }

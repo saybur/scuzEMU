@@ -20,6 +20,7 @@
 
 static WindowPtr window;
 static ListHandle list;
+/* FIXME this will not fit on screen, use str_load instead */
 static Str255 text;
 static short content_type;
 
@@ -119,6 +120,7 @@ void window_click(EventRecord *evt, short *sel, short *cnt)
 {
 	Boolean double_click;
 	Cell selected_cell;
+/* FIXME dynamic alloc */
 	Str255 s;
 
 	*cnt = 0;

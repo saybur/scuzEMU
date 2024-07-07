@@ -17,13 +17,29 @@
 #ifndef __UTIL__
 #define __UTIL__
 
-void alert_single(short res_id, short str_id);
-void alert_dual(short res_id, short str_id, short code);
+/**
+ * A generic "I've run out of memory" message used to inform the user that the heap
+ * has become exhausted and the program will shortly terminate.
+ */
+#define ALRT_UTIL_MEM_FAIL   1000
+
+/**
+ * Set of options for the generic alert dialog box. Unrecognized values use
+ * a per-call default.
+ */
+#define ATYPE_NOTE           1
+#define ATYPE_CAUTION        2
+#define ATYPE_STOP           3
+
+void alert_template(short type, short res_id, short str_id);
+void alert_template_error(short type, short res_id, short str_id, short err);
 void arr_del_short(short *arr, short len, short itm);
 void busy_cursor(void);
 void center_window(WindowPtr window);
-void str_load(short list_id, short index, unsigned char *tmp, unsigned char *str, short mlen);
-
-void util_init(void);
+Boolean init_is_wne(void);
+Boolean init_program(void (*quit)(void), short ptrcnt);
+void mem_fail(void);
+void repl_caret(unsigned char *s);
+void str_load(short id, short idx, unsigned char *str, short size);
 
 #endif /* __UTIL__ */

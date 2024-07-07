@@ -158,7 +158,6 @@ Boolean progress_click(EventRecord *evt)
  */
 Boolean progress_init(void)
 {
-	Str255 tmp;
 	Rect bounds;
 
 	window = GetNewWindow(WIND_PROGRESS, 0, (WindowPtr)-1);
@@ -167,8 +166,8 @@ Boolean progress_init(void)
 	}
 	SetWRefCon(window, WIND_PROGRESS);
 
-	str_load(STR_GENERAL, STRI_GEN_COPYING, tmp, str_copying, 32);
-	str_load(STR_GENERAL, STRI_GEN_WRITING, tmp, str_writing, 16);
+	str_load(STR_GENERAL, STRI_GEN_COPYING, str_copying, 32);
+	str_load(STR_GENERAL, STRI_GEN_WRITING, str_writing, 16);
 
 	progress = 0;
 	fcount = 0;

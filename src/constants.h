@@ -42,15 +42,10 @@
 #define ALRT_NO_IMAGES      130
 #define ALRT_NO_FILES       131
 #define ALRT_DUPLICATES     132
-#define ALRT_IMG_NO_DEV     133
-#define ALRT_IMG_CHNG_BSY   134
-#define ALRT_IMG_VCHNG_ERR  135
-#define ALRT_IMG_EJECT_ERR  136
 #define ALRT_GENERIC        256
 #define ALRT_BAD_VERSION    257
 #define ALRT_SCSI_ERROR     258
 #define ALRT_FILE_ERROR     259
-#define ALRT_MEM_ERROR      260
 
 #define CNTL_STOP           128
 
@@ -76,5 +71,12 @@
 #define STRI_GEN_DOWNLOAD   3
 #define STRI_GEN_COPYING    4
 #define STRI_GEN_WRITING    6
+
+#define STRI_GA_NSF         1
+#define STRI_GA_NSI         2
+#define STRI_GA_NO_DEV      4
+#define STRI_GA_CHNG_BSY    5
+#define STRI_GA_VCHNG_ERR   6
+#define STRI_GA_EJECT_ERR   7
 
 #endif /* __CONSTANTS__ */

@@ -23,57 +23,9 @@
 #include "transfer.h"
 #include "util.h"
 
-static void init_macintosh(void)
-{
-	long i;
-
-	InitGraf(&thePort);
-	InitFonts();
-	InitWindows();
-	InitMenus();
-	TEInit();
-	InitDialogs(0L);
-	InitCursor();
-
-	MaxApplZone();
-	MoreMasters();
-	MoreMasters();
-
-	/*
-	 * THINK C has glue to make this call safe on <6.0.4.
-	 * Not supposed to use gestaltSystemVersion like this but
-	 * we will ignore that and note need for >=6.0.8, nothing
-	 * lower is supported.
-	 *
-	 * Note: 6.0.8 reports as 0x0607
-	 */
-	if (Gestalt(gestaltSystemVersion, &i)) {
-		goto bad_version;
-	}
-	if (i < 0x0607) {
-		goto bad_version;
-	}
-
-	return;
-
-bad_version:
-	CautionAlert(ALRT_BAD_VERSION, 0L);
-	/* still allow user to run */
-}
-
-/* checks if WaitNextEvent is implemented */
-static Boolean init_is_wne(void)
-{
-	long v;
-
-	/* check if on Mac Plus or later */
-	if (Gestalt(gestaltMachineType, &v) && v >= 4) {
-		/* see THINK Reference example in WaitNextEvent */
-		return NGetTrapAddress(0xA860, 1) != NGetTrapAddress(0xA89F, 1);
-	} else {
-		return false;
-	}
-}
+static short scsi_id;
+static short open_type;
+static Boolean xfer_active;
 
 static void init_menus(void)
 {
@@ -92,10 +44,6 @@ static void init_menus(void)
 
 	DrawMenuBar();
 }
-
-short scsi_id;
-short open_type;
-Boolean xfer_active;
 
 static void do_xfer_stop()
 {
@@ -164,7 +112,7 @@ void do_open(void)
 		busy_cursor();
 
 		if (err = scsi_list_files(scsi_id, open_type, &h, &length)) {
-			alert_dual(ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+			alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
 		} else {
 			if (length <= 0) {
 				count = 0;
@@ -200,6 +148,7 @@ void do_quit(void)
 void do_menu_command(long menu_key)
 {
 	short menu_id, menu_item;
+/* FIXME dynamic alloc */
 	Str255 item_name;
 
 	menu_id = HiWord(menu_key);
@@ -240,8 +189,10 @@ void do_in_content_progress(EventRecord *evt)
 
 void do_in_content_window(EventRecord *evt)
 {
+/* FIXME dynamic alloc */
 	short items[256];
 	short itemcnt;
+/* FIXME dynamic alloc */
 	Str255 str;
 
 	window_click(evt, items, &itemcnt);
@@ -427,21 +378,39 @@ void evt_app3(EventRecord *evt)
 
 int main(void)
 {
+	long i;
 	EventRecord evt;
 	Boolean wneAvail;
 
-	init_macintosh();
+	if (! init_program(do_quit, 2)) {
+		return 128;
+	}
+
+	/*
+	 * Set early to avoid an unsafe do_quit()
+	 */
+	xfer_active = false;
+
+	/*
+	 * THINK C has glue to make this call safe on <6.0.4.
+	 * Not supposed to use gestaltSystemVersion like this but
+	 * we will ignore that and note need for >=6.0.8, nothing
+	 * lower is supported.
+	 *
+	 * Note: 6.0.8 reports as 0x0607
+	 */
+	if (!Gestalt(gestaltSystemVersion, &i) && i < 0x0607) {
+		CautionAlert(ALRT_BAD_VERSION, 0L);
+	}
+
 	init_menus();
 	wneAvail = init_is_wne();
 
 	emu_init();
-	util_init();
 	if(! (window_init() && progress_init())) {
-		StopAlert(ALRT_MEM_ERROR, 0);
-		ExitToShell();
+		mem_fail();
 	}
 
-	xfer_active = false;
 	scsi_id = 0;
 	open_type = 0;
 
@@ -465,8 +434,6 @@ int main(void)
 			}
 		}
 
-		update_menus(&evt);
-
 		switch (evt.what) {
 		case mouseDown:
 			evt_mousedown(&evt);
@@ -475,9 +442,11 @@ int main(void)
 			evt_keydown(&evt);
 			break;
 		case updateEvt:
+			update_menus(&evt);
 			evt_update(&evt);
 			break;
 		case activateEvt:
+			update_menus(&evt);
 			evt_activate(&evt);
 			break;
 		case app3Evt:
@@ -488,4 +457,6 @@ int main(void)
 			break;
 		}
 	}
+
+	return 0;
 }

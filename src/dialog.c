@@ -140,7 +140,7 @@ Boolean dialog_open(short *scsi, short *open_type)
 			return true;
 		}
 	} else {
-		StopAlert(ALRT_MEM_ERROR, 0);
+		mem_fail();
 	}
 
 	return false;
