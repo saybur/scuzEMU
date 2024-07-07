@@ -16,6 +16,7 @@
 
 #include "constants.h"
 #include "emu.h"
+#include "types.h"
 #include "window.h"
 #include "util.h"
 
@@ -41,6 +42,7 @@ static Boolean fopen;
 static short fref, findex;
 static long fsize, fblk, frem;
 static Str63 fname;
+static long ftype, fcreator;
 
 /**
  * Shows an appropriate alert when a file error occurs.
@@ -183,6 +185,7 @@ static Boolean transfer_file_open(short item)
  */
 static Boolean transfer_file_close(void)
 {
+	FInfo info;
 	short err;
 
 	if (! fopen) return false;
@@ -200,8 +203,19 @@ static Boolean transfer_file_close(void)
 		transfer_alert_ferr(err);
 		return false;
 	}
-
 	fopen = false;
+
+	if (err = GetFInfo(fname, vref, &info)) {
+		transfer_alert_ferr(err);
+		return false;
+	}
+	info.fdType = ftype;
+	info.fdCreator = fcreator;
+	if (err = SetFInfo(fname, vref, &info)) {
+		transfer_alert_ferr(err);
+		return false;
+	}
+
 	return true;
 }
 
@@ -319,6 +333,7 @@ void transfer_end(void)
 			/* result of error, get rid of partial file */
 			FSClose(fref);
 			FSDelete(fname, vref);
+			fopen = false;
 		}
 	}
 }
@@ -364,11 +379,17 @@ Boolean transfer_tick(void)
 	} else if (err = FSWrite(fref, &xfer, *data)) {
 		transfer_alert_ferr(err);
 	}
-	HUnlock(data);
 	if (err) {
+		HUnlock(data);
 		transfer_end();
 		return false;
 	}
+
+	/* if this is the first block, try to infer a file type */
+	if (fblk == 0) {
+		types_find(*data, fname, &ftype, &fcreator);
+	}
+	HUnlock(data);
 	fblk++;
 
 	tprog++;
