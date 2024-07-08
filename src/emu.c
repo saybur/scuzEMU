@@ -58,6 +58,7 @@ static Boolean emu_eject(short scsi_id)
 	short iref, dnum, vref, err;
 	long free;
 	CntrlParam *ctrlp;
+	VolumeParam *volp;
 	unsigned char *diskstate;
 	unsigned char *fname;
 
@@ -94,17 +95,30 @@ static Boolean emu_eject(short scsi_id)
 
 	/* if a volume was found, try to unmount it */
 	if (err == 0) {
-		if (err = UnmountVol(0, vref)) {
-			if (err == fBsyErr) {
-				/* files are open; common enough we have a dedicated message */
-				alert_template(ATYPE_CAUTION, ALRT_GENERIC, STRI_GA_CHNG_BSY);
-				return false;
-			} else if (err == 0) {
-				/* success */
-			} else {
-				alert_template_error(0, ALRT_GENERIC, STRI_GA_VCHNG_ERR, err);
-				return false;
-			}
+
+		/*
+		 * At least with 7.6.1 on an LC 475, calling UnmountVol with files
+		 * open returns fBusyErr like you'd expect but also will (often?)
+		 * make the volume freak out and/or the OS crash. So far with testing
+		 * this hasn't been happening with PBUnmountVol, it just returns the
+		 * error and things keep working fine.
+		 */
+		if (! (volp = (VolumeParam *) NewPtrClear(sizeof(VolumeParam)))) {
+			mem_fail();
+		}
+		volp->ioVRefNum = vref;
+		err = PBUnmountVol((ParmBlkPtr) volp);
+		DisposPtr((Ptr) volp);
+
+		if (err == fBsyErr) {
+			/* files are open; common enough we have a dedicated message */
+			alert_template(ATYPE_CAUTION, ALRT_GENERIC, STRI_GA_CHNG_BSY);
+			return false;
+		} else if (err == 0) {
+			/* success */
+		} else {
+			alert_template_error(0, ALRT_GENERIC, STRI_GA_VCHNG_ERR, err);
+			return false;
 		}
 	} else {
 		/* assume no matching volume; not necessarily a problem for non-native disks */
