@@ -74,6 +74,7 @@
 
 #define STRI_GA_NSF         1
 #define STRI_GA_NSI         2
+#define STRI_GA_IMGL_ERR    3
 #define STRI_GA_NO_DEV      4
 #define STRI_GA_CHNG_BSY    5
 #define STRI_GA_VCHNG_ERR   6

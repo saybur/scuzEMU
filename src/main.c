@@ -148,8 +148,7 @@ void do_quit(void)
 void do_menu_command(long menu_key)
 {
 	short menu_id, menu_item;
-/* FIXME dynamic alloc */
-	Str255 item_name;
+	unsigned char *item_ptr;
 
 	menu_id = HiWord(menu_key);
 	menu_item = LoWord(menu_key);
@@ -159,8 +158,12 @@ void do_menu_command(long menu_key)
 		if (menu_item == 1) {
 			Alert(ALRT_ABOUT, 0L);
 		} else {
-			GetItem(GetMenuHandle(MENU_APPLE), menu_item, item_name);
-			OpenDeskAcc(item_name);
+			if (! (item_ptr = (unsigned char *) NewPtr(256))) {
+				mem_fail();
+			}
+			GetItem(GetMenuHandle(MENU_APPLE), menu_item, item_ptr);
+			OpenDeskAcc(item_ptr);
+			DisposPtr((Ptr) item_ptr);
 		}
 		break;
 	case MENU_FILE:
@@ -189,13 +192,10 @@ void do_in_content_progress(EventRecord *evt)
 
 void do_in_content_window(EventRecord *evt)
 {
-/* FIXME dynamic alloc */
-	short items[256];
 	short itemcnt;
-/* FIXME dynamic alloc */
-	Str255 str;
+	Str15 str;
 
-	window_click(evt, items, &itemcnt);
+	window_click(evt, &itemcnt);
 
 	if (itemcnt > 0) {
 		/* veto if a transfer is active */
@@ -204,12 +204,12 @@ void do_in_content_window(EventRecord *evt)
 		busy_cursor();
 
 		if (open_type) {
-			emu_mount(scsi_id, items[0]);
+			emu_mount(scsi_id);
 			SetCursor(&arrow);
 		} else {
-			if (transfer_start(scsi_id, items, &itemcnt)) {
+			if (transfer_start(scsi_id, &itemcnt)) {
 				xfer_active = true;
-				GetIndString(str, STR_GENERAL, STRI_GEN_DOWNLOAD);
+				str_load(STR_GENERAL, STRI_GEN_DOWNLOAD, str, 16);
 				window_text(str);
 
 				progress_set_percent(0);

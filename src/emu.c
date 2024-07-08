@@ -272,17 +272,19 @@ short emu_populate_list(ListHandle list, Handle data, short data_len)
 }
 
 /**
- * Mount the image at the given index.
+ * Mount the selected image. If none is selected, no action is performed.
  *
- * @param scsi_id  the target SCSI ID
- * @param item     the list cell row to mount.
+ * @param scsi_id  the target SCSI ID.
  */
-void emu_mount(short scsi_id, short item)
+void emu_mount(short scsi_id)
 {
-	short index;
+	short item, index;
 	long err;
 
-	if (item < emu_count) {
+	item = 0;
+	window_next(&item);
+
+	if (item >= 0 && item < emu_count) {
 		index = emu_index[item];
 		if (err = scsi_set_image(scsi_id, index)) {
 			alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));

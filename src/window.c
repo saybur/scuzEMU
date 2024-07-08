@@ -20,8 +20,7 @@
 
 static WindowPtr window;
 static ListHandle list;
-/* FIXME this will not fit on screen, use str_load instead */
-static Str255 text;
+static Str31 text;
 static short content_type;
 
 /**
@@ -111,32 +110,30 @@ void window_activate(Boolean active)
  * This is narrowly tailored to mouse clicks on the list and will need expansion
  * if more program features are added.
  *
+ * If there was a double-click on the list, this will scan through the selected cells
+ * and return the number of cells selected. You can then scan the list via window_next().
+ *
  * @param evt  the event record causing the click.
- * @param sel  vertical indexes of the selected cells, up to 256.
- * @param cnt  pointer to a number that will contain the number of selected cells.
- * @return     true if a cell was selected, false otherwise.
+ * @param cnt  the number of selected cells.
  */
-void window_click(EventRecord *evt, short *sel, short *cnt)
+void window_click(EventRecord *evt, short *cnt)
 {
-	Boolean double_click;
 	Cell selected_cell;
-/* FIXME dynamic alloc */
-	Str255 s;
+	short i;
 
-	*cnt = 0;
+	i = 0;
 
 	SetPort(window);
-
 	GlobalToLocal(&(evt->where));
-	double_click = LClick(evt->where, evt->modifiers, list);
-	if (double_click) {
 
+	if (LClick(evt->where, evt->modifiers, list)) {
 		SetPt(&selected_cell, 0, 0);
 		while (LGetSelect(true, &selected_cell, list)) {
-			sel[(*cnt)++] = selected_cell.v++;
-			if (*cnt > 256) return;
+			i++;
+			selected_cell.v++;
 		}
 	}
+	*cnt = i;
 }
 
 /**
@@ -184,6 +181,29 @@ void window_grow(Point p)
 	}
 
 	SetPort(old_port);
+}
+
+/**
+ * Provides the next selected item number within the list.
+ *
+ * This is just a wrapper around LGetSelect(true), so it can be called repeatedly,
+ * starting at 0, returning the next selected cell each time (though don't forget
+ * to add 1 to the result to move past the last-selected cell).
+ *
+ * @param *i  on input, the cell to start at; will be set to the next selected
+ *            cell, or -1 if there are no more cells.
+ */
+void window_next(short *i)
+{
+	Point p;
+
+	p.h = 0;
+	p.v = *i;
+	if (LGetSelect(true, &p, list)) {
+		*i = p.v;
+	} else {
+		*i = -1;
+	}
 }
 
 /**
@@ -261,13 +281,14 @@ void window_text(unsigned char *str)
 	if (str) {
 		/* copy string to local; don't forget length in Pascal string */
 		len = (unsigned char) str[0];
+		if (len > 31) len = 31;
 		BlockMove(str, text, len + 1);
 	} else {
 		/* use default */
 		if (content_type) {
-			GetIndString(text, STR_GENERAL, STRI_GEN_IMAGES);
+			str_load(STR_GENERAL, STRI_GEN_IMAGES, text, 32);
 		} else {
-			GetIndString(text, STR_GENERAL, STRI_GEN_FILES);
+			str_load(STR_GENERAL, STRI_GEN_FILES, text, 32);
 		}
 	}
 

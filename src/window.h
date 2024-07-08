@@ -18,13 +18,14 @@
 #define __WINDOW__
 
 Boolean window_init(void);
-void window_click(EventRecord *evt, short *sel, short *cnt);
 
+void window_click(EventRecord *evt, short *cnt);
+void window_next(short *i);
 void window_get_item_name(short item, Str255 str);
-void window_grow(Point p);
-short window_populate(short mode, Handle h, short len);
+short window_populate(short mode, Handle h, short count);
 
 void window_activate(Boolean active);
+void window_grow(Point p);
 void window_resume(Boolean resume);
 void window_show(Boolean show);
 void window_text(unsigned char *str);

@@ -78,26 +78,30 @@ static void transfer_alert_ferr(short err)
 static short transfer_check_duplicates(void)
 {
 	short i, err;
-/* FIXME dynamic alloc */
-	Str63 f;
+	unsigned char *fn;
 	FInfo fi;
 	Boolean user_asked;
 
 	repl_dup = false;
 	user_asked = false;
 
+	if (! (fn = (unsigned char *) NewPtr(64))) {
+		mem_fail();
+	}
+
 	i = 0;
 	while (i < items_count) {
 
 		/* fetch expected user item */
-		window_get_item_name(items_ptr[i], f);
+		window_get_item_name(items_ptr[i], fn);
 
-		if (err = GetFInfo(f, vref, &fi)) {
+		if (err = GetFInfo(fn, vref, &fi)) {
 			if (err == fnfErr) {
 				/* expected, file does not exist, move to next */
 				i++;
 			} else {
 				/* a real error, bail out */
+				DisposPtr((Ptr) fn);
 				return err;
 			}
 		} else {
@@ -122,6 +126,7 @@ static short transfer_check_duplicates(void)
 		}
 	}
 
+	DisposPtr((Ptr) fn);
 	return 0;
 }
 
@@ -235,13 +240,15 @@ void transfer_init(void)
  * Call transfer_tick() repeatedly to actually progress with the transfer.
  * See that function for more details.
  *
+ * Upon being called, this will reach into the window list and find the
+ * selected cells.
+ *
  * @param scsi   the SCSI ID to work with.
- * @param items  the item number(s) to pull out of the list.
  * @param icnt   set to the number of items in the above list, will be
  *               set to the actual number of items upon non-error return.
  * @return       true if the starting process went OK, false otherwise.
  */
-Boolean transfer_start(short scsi, short *items, short *icnt)
+Boolean transfer_start(short scsi, short *icnt)
 {
 	Point p;
 	SFReply out;
@@ -254,18 +261,29 @@ Boolean transfer_start(short scsi, short *items, short *icnt)
 	scsi_id = scsi;
 	fopen = false;
 
-	/* store item indexing information */
+	/* setup item storage */
 	if (*icnt <= 0) {
 		/* TODO be noiser, this is probably a programming error */
 		*icnt = 0;
-		return;
+		return false;
 	}
 	items_count = *icnt;
 	items_cur = 0;
 	if (!(items_ptr = (short *) NewPtr(items_count * 2))) {
 		mem_fail();
 	}
-	BlockMove(items, (Ptr) items_ptr, items_count * 2);
+
+	/* scan the list and get the items */
+	i = 0; t = 0;
+	window_next(&t);
+	while (t >= 0 && i < items_count) {
+		items_ptr[i++] = t++;
+		window_next(&t);
+	}
+	if (i != items_count) {
+		alert_template(0, ALRT_GENERIC, STRI_GA_IMGL_ERR);
+		goto transfer_start_fail;
+	}
 
 	/*
 	 * Use a generic placeholder. As a TODO, this should probably use
