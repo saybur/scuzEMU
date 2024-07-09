@@ -60,7 +60,9 @@ static void evt_null(void)
 {
 	if (xfer_active) {
 		busy_cursor();
-		PostEvent(app3Evt, 0);
+		if (!transfer_tick()) {
+			do_xfer_stop();
+		}
 	} else {
 		SetCursor(&arrow);
 	}
@@ -370,13 +372,6 @@ void evt_os(EventRecord *evt)
 	}
 }
 
-void evt_app3(EventRecord *evt)
-{
-	if (!transfer_tick()) {
-		do_xfer_stop();
-	}
-}
-
 int main(void)
 {
 	long i;
@@ -450,9 +445,6 @@ int main(void)
 		case activateEvt:
 			update_menus(&evt);
 			evt_activate(&evt);
-			break;
-		case app3Evt:
-			evt_app3(&evt);
 			break;
 		case osEvt:
 			evt_os(&evt);
