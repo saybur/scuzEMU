@@ -14,6 +14,7 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "constants.h"
 #include "util.h"
 
@@ -29,7 +30,7 @@ static unsigned char fname[FNAME_MAX_LEN + 1];
 static short fcount, progress;
 
 /**
- * Draws just the progress bar. Should be called with the GrafPort set.
+ * Draws the full progress bar. Should be called with the GrafPort set.
  *
  * @param *bounds  window->portRect
  * @param redraw   erase before drawing if true
@@ -37,6 +38,7 @@ static short fcount, progress;
 static void progress_draw_bar(Rect *bounds, Boolean redraw)
 {
 	Rect bar;
+	RGBColor oc, color;
 
 	bar.top = progress_bar.top + bounds->top;
 	bar.bottom = progress_bar.bottom + bounds->top;
@@ -45,10 +47,37 @@ static void progress_draw_bar(Rect *bounds, Boolean redraw)
 
 	if (redraw) {
 		EraseRect(&bar);
-		FrameRect(&bar);
 	}
+	FrameRect(&bar);
+
+	/* the fill part of the bar goes in the interior only */
+	InsetRect(&bar, 1, 1);
+
+	/* draw background color for the bar, or leave white in non-color */
+	/* leave as white in non-color */
+	if (g_use_qdcolor) {
+		GetBackColor(&oc);
+		color.red = 0xCCFF;
+		color.green = 0xCCFF;
+		color.blue = 0xFFFF;
+		RGBBackColor(&color);
+		FillRect(&bar, &(qd.white));
+		RGBBackColor(&oc);
+	}
+
+	/* draw bar foreground as percentage; use color if available */
 	bar.right = bar.left + 2 * progress;
-	FillRect(&bar, &(qd.black));
+	if (g_use_qdcolor) {
+		GetForeColor(&oc);
+		color.red = 0x4400;
+		color.green = 0x4400;
+		color.blue = 0x4400;
+		RGBForeColor(&color);
+		FillRect(&bar, &(qd.black));
+		RGBForeColor(&oc);
+	} else {
+		FillRect(&bar, &(qd.black));
+	}
 }
 
 /**
@@ -94,7 +123,7 @@ static void progress_draw(void)
 	TextFont(old_font);
 	TextSize(0);
 
-	progress_draw_bar(&bounds, true);
+	progress_draw_bar(&bounds, false);
 
 	SetPort(old_port);
 }
@@ -160,7 +189,11 @@ Boolean progress_init(void)
 {
 	Rect bounds;
 
-	window = GetNewWindow(WIND_PROGRESS, 0, (WindowPtr)-1);
+	if (g_use_qdcolor) {
+		window = GetNewCWindow(WIND_PROGRESS, 0, (WindowPtr)-1);
+	} else {
+		window = GetNewWindow(WIND_PROGRESS, 0, (WindowPtr)-1);
+	}
 	if (!window) {
 		return false;
 	}
@@ -179,8 +212,8 @@ Boolean progress_init(void)
 
 	SetRect(&progress_bar, bounds.left + 10,
 			bounds.top + 56,
-			bounds.left + 210,
-			bounds.top + 66);
+			bounds.left + 212,
+			bounds.top + 67);
 
 	stop_button = GetNewControl(CNTL_STOP, window);
 	if (! stop_button) {
@@ -218,7 +251,8 @@ void progress_set_count(short count)
 }
 
 /**
- * Sets the amount of progress as an integer percentage.
+ * Sets the amount of progress as an integer percentage. This triggers a
+ * progress bar redraw automatically.
  *
  * @param percent  the value for progress, between 0 and 100 inclusive.
  */
@@ -226,15 +260,46 @@ void progress_set_percent(short percent)
 {
 	GrafPtr old_port;
 	Rect bar;
+	RGBColor oc, color;
+
+	if (percent < 0) percent = 0;
+	if (percent > 100) percent = 100;
+
+	/*
+	 * This performs an abbreviated version of progress_draw_bar()
+	 * below if the update is incremental to the original progress
+	 * bar, which helps cut down on flashing during updates. If the
+	 * update is less than the current level, the whole bar is redrawn
+	 * (this should be rare). If there is no change nothing is done.
+	 */
 
 	GetPort(&old_port);
 	SetPort(window);
 
-	if (percent < 0) percent = 0;
-	if (percent > 100) percent = 100;
-	progress = percent;
+	if (percent < progress) {
+		progress = percent;
+		progress_draw_bar(&(window->portRect), true);
+	} else if (percent > progress) {
+		bar.top = progress_bar.top + (window->portRect).top + 1;
+		bar.bottom = progress_bar.bottom + (window->portRect).top - 1;
+		bar.left = progress_bar.left + (window->portRect).left + 1
+				+ progress * 2;
+		bar.right = bar.left + 2 * (percent - progress);
 
-	progress_draw_bar(&(window->portRect), false);
+		if (g_use_qdcolor) {
+			GetForeColor(&oc);
+			color.red = 68 << 8;
+			color.green = 68 << 8;
+			color.blue = 68 << 8;
+			RGBForeColor(&color);
+		}
+		FillRect(&bar, &(qd.black));
+		if (g_use_qdcolor) {
+			RGBForeColor(&oc);
+		}
+
+		progress = percent;
+	}
 
 	SetPort(window);
 }

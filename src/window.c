@@ -14,6 +14,7 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "constants.h"
 #include "emu.h"
 #include "window.h"
@@ -69,7 +70,11 @@ Boolean window_init(void)
 	short i;
 	Point p;
 
-	window = GetNewWindow(WIND_MAIN, 0, (WindowPtr)-1);
+	if (g_use_qdcolor) {
+		window = GetNewCWindow(WIND_MAIN, 0, (WindowPtr)-1);
+	} else {
+		window = GetNewWindow(WIND_MAIN, 0, (WindowPtr)-1);
+	}
 	if (!window) {
 		return false;
 	}

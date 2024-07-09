@@ -14,6 +14,7 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "constants.h"
 #include "dialog.h"
 #include "emu.h"
@@ -403,6 +404,7 @@ int main(void)
 		CautionAlert(ALRT_BAD_VERSION, 0L);
 	}
 
+	config_init();
 	init_menus();
 	wneAvail = init_is_wne();
 
