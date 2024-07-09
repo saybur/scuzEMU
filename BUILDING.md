@@ -16,7 +16,7 @@ version 5 may work as well. This is the basic process to compile this yourself:
 6. Navigate to your "Mac Libraries" folder, find `MacTraps` and add it to the
    project.
 7. Go to the Project menu, choose "Set Project Type..." and set "Creator" to
-   `scuz`.
+   `scuz`. Set "Partition (K)" to `128` and "SIZE Flags" to 5880.
 8. Go to Project again, choose "Build Application..." and select where you want
    to save the compiled binary.
 
