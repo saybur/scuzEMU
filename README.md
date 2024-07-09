@@ -56,14 +56,9 @@ The following issues are known to exist in this application:
 * Keyboard arrows / enter key are not handled by the file/image list.
 * Uploading files is unimplemented (I haven't decided if this would be useful
   or not).
-* Ejecting disks has to be done by the user. It should be possible to integrate
-  that step into the application, at least in most circumstances.
 * Some graphical elements are missing.
 * Downloading is slower than it should be; adding blind transfers on supported
   systems would probably improve this.
-* If a SCSI drive reports a fault the software will not issue the needed
-  REQUEST SENSE to address it. You will likely need to restart your computer to
-  fix this problem.
 
 More generally:
 
