@@ -7,6 +7,8 @@ allows you to remotely control certain SCSI emulators to:
 * Download files within a /shared/ folder on the SD card,
 * Switch between different removable disk images on supported drives (CD-ROMs).
 
+![example download in progress](https://github.com/saybur/scuzEMU/blob/main/extra/example_download.png?raw=true)
+
 Compatibility
 -------------
 
