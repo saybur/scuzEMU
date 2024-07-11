@@ -55,6 +55,10 @@
 #define MENU_FILE           129
 #define MENU_EDIT           130
 
+#define MENUI_OPEN          1
+#define MENUI_UPLOAD        3
+#define MENUI_QUIT          5
+
 #define STR_GENERAL         128
 
 #define WIND_MAIN           128
@@ -69,8 +73,9 @@
 #define STRI_GEN_FILES      1
 #define STRI_GEN_IMAGES     2
 #define STRI_GEN_DOWNLOAD   3
-#define STRI_GEN_COPYING    4
-#define STRI_GEN_WRITING    6
+#define STRI_GEN_PROG_DOWN  4
+#define STRI_GEN_PROG_UP    5
+#define STRI_GEN_PROG_FILE  6
 
 #define STRI_GA_NSF         1
 #define STRI_GA_NSI         2
@@ -79,5 +84,7 @@
 #define STRI_GA_CHNG_BSY    5
 #define STRI_GA_VCHNG_ERR   6
 #define STRI_GA_EJECT_ERR   7
+#define STRI_GA_UP_BADLEN   8
+#define STRI_GA_UP_BADCHAR  9
 
 #endif /* __CONSTANTS__ */

@@ -23,11 +23,13 @@
 static WindowPtr window;
 static ControlHandle stop_button;
 static Rect progress_bar;
-static Str31 str_copying;
-static Str15 str_writing;
+static Str31 str_download;
+static Str31 str_upload;
+static Str15 str_file;
 
 static unsigned char fname[FNAME_MAX_LEN + 1];
 static short fcount, progress;
+static Boolean is_download;
 
 /**
  * Draws the full progress bar. Should be called with the GrafPort set.
@@ -103,21 +105,25 @@ static void progress_draw(void)
 	TextFont(0);
 	TextSize(12);
 
-	/* "Remaining files to copy:" */
+	/* "Remaining files to download/upload:" */
 	MoveTo(bounds.left + 10, bounds.top + 20);
-	DrawString(str_copying);
+	if (is_download) {
+		DrawString(str_download);
+	} else {
+		DrawString(str_upload);
+	}
 
 	/* "[num files to copy]" */
 	NumToString((long) fcount, fcount_str);
 	MoveTo(bounds.right - StringWidth(fcount_str) - 20, bounds.top + 20);
 	DrawString(fcount_str);
 
-	/* "Writing:" */
+	/* "File:" */
 	MoveTo(bounds.left + 10, bounds.top + 42);
-	DrawString(str_writing);
+	DrawString(str_file);
 
 	/* "[filename]" */
-	MoveTo(bounds.left + 70, bounds.top + 42);
+	MoveTo(bounds.left + 60, bounds.top + 42);
 	DrawString(fname);
 
 	TextFont(old_font);
@@ -199,12 +205,14 @@ Boolean progress_init(void)
 	}
 	SetWRefCon(window, WIND_PROGRESS);
 
-	str_load(STR_GENERAL, STRI_GEN_COPYING, str_copying, 32);
-	str_load(STR_GENERAL, STRI_GEN_WRITING, str_writing, 16);
+	str_load(STR_GENERAL, STRI_GEN_PROG_DOWN, str_download, 32);
+	str_load(STR_GENERAL, STRI_GEN_PROG_UP, str_upload, 32);
+	str_load(STR_GENERAL, STRI_GEN_PROG_FILE, str_file, 16);
 
 	progress = 0;
 	fcount = 0;
 	fname[0] = 0;
+	is_download = true;
 
 	SetPort(window);
 	bounds = window->portRect;
@@ -248,6 +256,17 @@ void progress_set_count(short count)
 {
 	fcount = count;
 	progress_draw();
+}
+
+
+/**
+ * Sets if the progress bar is for file downloading or uploading.
+ *
+ * @param download  true for downloads, false for uploads.
+ */
+void progress_set_direction(Boolean download)
+{
+	is_download = download;
 }
 
 /**

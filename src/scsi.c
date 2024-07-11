@@ -25,6 +25,9 @@
  * * 0xD0: list files [sharedDir / onListFiles]
  * * 0xD1: get file [sharedDir / onFileGet10]
  * * 0xD2: count files [sharedDir / doCountFiles]
+ * * 0xD3: start send [sendFilePrep]
+ * * 0xD4: send file block [sendFile10]
+ * * 0xD5: end send [sendFileEnd]
  * * 0xD7: list images [CDx / onListFiles]
  * * 0xD8: set next image [onSetNextCD]
  * * 0xD9: list devices [onListDevices] (not implemented as of now)
@@ -51,16 +54,17 @@
  */
 
 /**
- * "Low level" reading operation against a SCSI target.
+ * Low-level general handler for running a transaction against a SCSI target.
  *
  * @param scsi_id  device ID on [0, 6].
  * @param *op      pointer to CDB array to send.
  * @param op_len   length of the CDB array.
- * @param data     address of pointer to write bytes into during reading.
- * @param length   number of data bytes to read, or zero to skip reading.
+ * @param read     true if receiving data from device, false if sending data to device.
+ * @param data     address of pointer to save data, if reading, or get data, if sending.
+ * @param length   number of data bytes to read, or zero to skip read/write step.
  * @return         error code, or zero for success.
  */
-static long scsi_read(short scsi_id, char *op, short op_len, long data, short length)
+static long scsi_t(short scsi_id, char *op, short op_len, Boolean read, long data, short length)
 {
 	SCSIInstr inst[2];
 	long fail;
@@ -81,7 +85,7 @@ static long scsi_read(short scsi_id, char *op, short op_len, long data, short le
 	if (fail = SCSICmd(op, op_len)) {
 		/* command failed, need to clear condition */
 		fail |= 0x30000;
-		goto scsi_read_cleanup;
+		goto scsi_t_cleanup;
 	}
 
 	if (length > 0) {
@@ -91,10 +95,18 @@ static long scsi_read(short scsi_id, char *op, short op_len, long data, short le
 		inst[1].scOpcode = scStop;
 		inst[1].scParam1 = 0;
 		inst[1].scParam2 = 0;
-		if (fail = SCSIRead((Ptr) &inst)) {
-			/* read failed, still need to clean up */
-			fail |= 0x40000;
-			goto scsi_read_cleanup;
+		if (read) {
+			if (fail = SCSIRead((Ptr) &inst)) {
+				/* read failed, still need to clean up */
+				fail |= 0x40000;
+				goto scsi_t_cleanup;
+			}
+		} else {
+			if (fail = SCSIWrite((Ptr) &inst)) {
+				/* write failed, still need to clean up */
+				fail |= 0x40000;
+				goto scsi_t_cleanup;
+			}
 		}
 	}
 
@@ -110,7 +122,7 @@ static long scsi_read(short scsi_id, char *op, short op_len, long data, short le
 		return fail;
 	}
 
-scsi_read_cleanup:
+scsi_t_cleanup:
 	/* try to do a clean hangup */
 	SCSIComplete(&stat, &message, SCSI_TIMEOUT);
 	return fail;
@@ -154,7 +166,7 @@ static long scsi_request_sense(short scsi_id, long *sense)
 	cdb[4] = sizeof(rs);
 	cdb[5] = 0;
 
-	if (err = scsi_read(scsi_id, (char *) cdb, sizeof(cdb), (long) &rs, sizeof(rs))) {
+	if (err = scsi_t(scsi_id, (char *) cdb, sizeof(cdb), true, (long) &rs, sizeof(rs))) {
 		*sense = -1;
 		return err;
 	}
@@ -210,7 +222,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 		cdb[0] = 0xD2;
 	}
 
-	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), (long) &data_len, 1)) {
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) &data_len, 1)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
 	}
@@ -228,7 +240,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 	}
 
 	HLock(h);
-	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), (long) *h, *length)) {
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) *h, *length)) {
 		/* attempt to read listing failed */
 		/* TODO probably should make it clear which call failed */
 		HUnlock(h);
@@ -257,7 +269,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 long scsi_read_file(short scsi_id, short index, long offset, char *data, short length)
 {
 	char cdb[10];
-	long fail;
+	long fail, sense;
 
 	scsi_init_cdb(cdb);
 	cdb[0] = 0xD1;
@@ -267,7 +279,8 @@ long scsi_read_file(short scsi_id, short index, long offset, char *data, short l
 	cdb[4] = (offset >> 8) & 0xFF;
 	cdb[5] = offset & 0xFF;
 
-	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), (long) data, length)) {
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) data, length)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
 	}
 
@@ -294,7 +307,96 @@ long scsi_set_image(short scsi_id, short index)
 	cdb[0] = 0xD8;
 	cdb[1] = index; /* upgrade if >255 support arrives */
 
-	if (fail = scsi_read(scsi_id, cdb, sizeof(cdb), 0, 0)) {
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, 0, 0)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result for now */
+		return fail;
+	}
+
+	return 0;
+}
+
+
+/**
+ * Starts a file upload on the emulator.
+ *
+ * CDB is 0xD3, remaining bytes are ignored. Must be followed by exactly 33 bytes
+ * of null-terminated name data, limited to FAT filename characters, which is the
+ * responsibility of the caller.
+ *
+ * @param scsi_id  the device at the given SCSI ID to command.
+ * @param name     the name data as described above.
+ * @return         error code, or zero for success.
+ */
+long scsi_write_start(short scsi_id, unsigned char* name)
+{
+	char cdb[10];
+	long fail, sense;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD3;
+
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), false, (long) name, 33)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		return fail;
+	}
+
+	return 0;
+}
+
+/**
+ * Sends an upload file block to the emulator.
+ *
+ * CDB is 0xD4, two big-endian bytes of data length (max 512), three big-endian
+ * bytes indicating the 512-byte block offset to write into, then remaining bytes
+ * are ignored.
+ *
+ * @param scsi_id  the device at the given SCSI ID to command.
+ * @param offset   24 bit offset where the block should be saved.
+ * @param data     the data to save.
+ * @param length   the length of data, max 512.
+ * @return         error code, or zero for success.
+ */
+long scsi_write_block(short scsi_id, long offset, char *data, short length)
+{
+	char cdb[10];
+	long fail, sense;
+
+	if (length > 512) length = 512;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD4;
+	cdb[1] = (length >> 8) & 0x03;
+	cdb[2] = length & 0xFF;
+	cdb[3] = (offset >> 16) & 0xFF;
+	cdb[4] = (offset >> 8) & 0xFF;
+	cdb[5] = offset & 0xFF;
+
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), false, (long) data, length)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		return fail;
+	}
+
+	return 0;
+}
+
+/**
+ * Closes a file upload.
+ *
+ * CDB is 0xD5, remaining bytes are ignored.
+ *
+ * @param scsi_id  the device at the given SCSI ID to command.
+ * @return         error code, or zero for success.
+ */
+long scsi_write_end(short scsi_id)
+{
+	char cdb[10];
+	long fail, sense;
+	short i;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD5;
+
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), false, 0, 0)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result for now */
 		return fail;
 	}

@@ -25,6 +25,7 @@ void progress_show(Boolean open);
 void progress_update(void);
 
 void progress_set_count(short count);
+void progress_set_direction(Boolean inbound);
 void progress_set_file(StringPtr str);
 void progress_set_percent(short percent);
 

@@ -24,9 +24,14 @@
 #include "transfer.h"
 #include "util.h"
 
+#define STATE_IDLE      1
+#define STATE_OPEN      2
+#define STATE_DOWNLOAD  3
+#define STATE_UPLOAD    4
+
 static short scsi_id;
 static short open_type;
-static Boolean xfer_active;
+static short pstate;
 
 static void init_menus(void)
 {
@@ -46,21 +51,80 @@ static void init_menus(void)
 	DrawMenuBar();
 }
 
+/**
+ * Performs a file/image list update from the emulator using stored values.
+ * This will automatically show or hide the window based on the results of the
+ * operation, updating the program state accordingly.
+ */
+static void do_list_update(void)
+{
+	Handle h;
+	long err;
+	short length, count;
+	Str15 ns;
+
+	busy_cursor();
+	if (err = scsi_list_files(scsi_id, open_type, &h, &length)) {
+		window_show(false);
+		pstate = STATE_IDLE;
+		alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+	} else {
+		if (length <= 0) {
+			count = 0;
+			/* handle never allocated, do not discard */
+		} else {
+			count = window_populate(open_type, h, length);
+			DisposHandle(h);
+		}
+
+		SetCursor(&arrow);
+		if (open_type) {
+			/* images */
+			if (count <= 0) {
+				/* probably not a valid device */
+				NumToString(scsi_id, ns);
+				ParamText(ns, 0, 0, 0);
+				NoteAlert(ALRT_NO_IMAGES, 0);
+				pstate = STATE_IDLE;
+			} else {
+				window_show(true);
+				pstate = STATE_OPEN;
+			}
+		} else {
+			/* files */
+			if (count <= 0) {
+				/* just mention issue, it might cause problems (or not) */
+				NoteAlert(ALRT_NO_FILES, 0);
+			}
+			window_show(true);
+			pstate = STATE_OPEN;
+		}
+	}
+}
+
 static void do_xfer_stop()
 {
-	if (xfer_active) {
-		xfer_active = false;
+	if (pstate == STATE_DOWNLOAD) {
+		pstate = STATE_OPEN;
 		transfer_end();
 		progress_show(false);
 		window_text(0);
+	} else if (pstate == STATE_UPLOAD) {
+		upload_end();
+		progress_show(false);
+		window_text(0);
+		do_list_update();
 	}
 }
 
 static void evt_null(void)
 {
-	if (xfer_active) {
-		busy_cursor();
-		if (!transfer_tick()) {
+	if (pstate == STATE_DOWNLOAD) {
+		if (! transfer_tick()) {
+			do_xfer_stop();
+		}
+	} else if (pstate == STATE_UPLOAD) {
+		if (! upload_tick()) {
 			do_xfer_stop();
 		}
 	} else {
@@ -96,49 +160,32 @@ static void update_menus(EventRecord *evt)
 		}
 	}
 
-	/* also disallow opening when a transfer is in progress */
-	if (xfer_active) {
-		DisableItem(file, 1);
+	/* allow uploading only when we are connected to a device */
+	if (pstate == STATE_OPEN) {
+		EnableItem(file, MENUI_UPLOAD);
+	} else {
+		DisableItem(file, MENUI_UPLOAD);
+	}
+
+	/* also disallow opening while a transfer is in progress */
+	if (pstate == STATE_DOWNLOAD || pstate == STATE_UPLOAD) {
+		DisableItem(file, MENUI_OPEN);
 	}
 }
 
 void do_open(void)
 {
-	Handle h;
-	long err;
-	short length, count;
-	Str15 ns;
-
 	if (dialog_open(&scsi_id, &open_type)) {
+		do_list_update();
+	}
+}
 
-		window_show(false);
-		busy_cursor();
-
-		if (err = scsi_list_files(scsi_id, open_type, &h, &length)) {
-			alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
-		} else {
-			if (length <= 0) {
-				count = 0;
-				/* handle never allocated, do not discard */
-			} else {
-				count = window_populate(open_type, h, length);
-				DisposHandle(h);
-			}
-
-			SetCursor(&arrow);
-			if (count > 0) {
-				window_show(true);
-			} else {
-				if (open_type) {
-					NumToString(scsi_id, ns);
-					ParamText(ns, 0, 0, 0);
-					NoteAlert(ALRT_NO_IMAGES, 0);
-				} else {
-					/* no need to report ID, shared dir is global */
-					NoteAlert(ALRT_NO_FILES, 0);
-				}
-			}
-		}
+void do_upload(void)
+{
+	if (upload_start(scsi_id)) {
+		pstate = STATE_UPLOAD;
+		progress_set_direction(false);
+		progress_show(true);
 	}
 }
 
@@ -170,9 +217,11 @@ void do_menu_command(long menu_key)
 		}
 		break;
 	case MENU_FILE:
-		if (menu_item == 1) {
+		if (menu_item == MENUI_OPEN) {
 			do_open();
-		} else if (menu_item == 3) {
+		} else if (menu_item == MENUI_UPLOAD) {
+			do_upload();
+		} else if (menu_item == MENUI_QUIT) {
 			do_quit();
 		}
 		break;
@@ -202,7 +251,7 @@ void do_in_content_window(EventRecord *evt)
 
 	if (itemcnt > 0) {
 		/* veto if a transfer is active */
-		if (xfer_active) return;
+		if (pstate != STATE_OPEN) return;
 
 		busy_cursor();
 
@@ -211,13 +260,14 @@ void do_in_content_window(EventRecord *evt)
 			SetCursor(&arrow);
 		} else {
 			if (transfer_start(scsi_id, &itemcnt)) {
-				xfer_active = true;
+				pstate = STATE_DOWNLOAD;
 				str_load(STR_GENERAL, STRI_GEN_DOWNLOAD, str, 16);
 				window_text(str);
 
 				progress_set_percent(0);
 				progress_set_count(itemcnt);
 				progress_set_file(str);
+				progress_set_direction(true);
 				progress_show(true);
 			} else {
 				/* failed to start the transfer */
@@ -251,7 +301,7 @@ void evt_mousedown(EventRecord *evt)
 		SystemClick(evt, window);
 		break;
 	case inContent:
-		if (xfer_active) {
+		if (pstate != STATE_OPEN) {
 			if (ref == WIND_PROGRESS) {
 				if (window != FrontWindow()) {
 					SelectWindow(window);
@@ -271,14 +321,14 @@ void evt_mousedown(EventRecord *evt)
 		}
 		break;
 	case inDrag:
-		if (xfer_active && ref == WIND_MAIN) {
+		if (pstate != STATE_OPEN && ref == WIND_MAIN) {
 			SysBeep(1);
 		} else {
 			DragWindow(window, evt->where, &(*GetGrayRgn())->rgnBBox);
 		}
 		break;
 	case inGrow:
-		if (xfer_active && ref == WIND_MAIN) {
+		if (pstate != STATE_OPEN && ref == WIND_MAIN) {
 			SysBeep(1);
 		} else {
 			window_grow(evt->where);
@@ -289,11 +339,12 @@ void evt_mousedown(EventRecord *evt)
 		/* not implemented */
 		break;
 	case inGoAway:
-		if (xfer_active && ref == WIND_MAIN) {
+		if (pstate != STATE_OPEN && ref == WIND_MAIN) {
 			SysBeep(1);
 		} else {
 			if (TrackGoAway(window, evt->where)) {
 				window_show(false);
+				pstate = STATE_IDLE;
 			}
 		}
 		break;
@@ -346,7 +397,7 @@ void evt_activate(EventRecord *evt)
 	active = evt->modifiers & activeFlag;
 
 	if (kind == userKind) {
-		if (xfer_active) {
+		if (pstate != STATE_OPEN) {
 			if (ref == WIND_MAIN && active) {
 				/* progress steals activation */
 				progress_activate(true);
@@ -364,7 +415,7 @@ void evt_activate(EventRecord *evt)
 void evt_os(EventRecord *evt)
 {
 	if (suspendResumeMessage & evt->message >> 24) {
-		if (xfer_active) {
+		if (pstate != STATE_OPEN) {
 			progress_resume(evt->message & resumeFlag);
 		} else {
 			window_resume(evt->message & resumeFlag);
@@ -385,7 +436,7 @@ int main(void)
 	/*
 	 * Set early to avoid an unsafe do_quit()
 	 */
-	xfer_active = false;
+	pstate = STATE_IDLE;
 
 	/*
 	 * THINK C has glue to make this call safe on <6.0.4.

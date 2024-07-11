@@ -21,8 +21,7 @@
 #include "util.h"
 
 /*
- * This compilation unit implements the file transfer logic. This _may_ incorporate
- * a future upload function as well.
+ * This compilation unit implements the file downloading logic.
  */
 
 #define XFER_BUF_SIZE 4096
@@ -32,7 +31,7 @@ static short scsi_id;
 static Handle data;
 static short *items_ptr;
 static short items_cur, items_count, vref;
-static Boolean session, error, repl_dup;
+static Boolean session, repl_dup;
 
 /* transaction remaining, for progress tracking; in file blocks */
 static long tblks, tprog;
