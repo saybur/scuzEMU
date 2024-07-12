@@ -22,6 +22,7 @@
 #include "scsi.h"
 #include "window.h"
 #include "transfer.h"
+#include "upload.h"
 #include "util.h"
 
 #define STATE_IDLE      1
@@ -173,14 +174,14 @@ static void update_menus(EventRecord *evt)
 	}
 }
 
-void do_open(void)
+static void do_open(void)
 {
 	if (dialog_open(&scsi_id, &open_type)) {
 		do_list_update();
 	}
 }
 
-void do_upload(void)
+static void do_upload(void)
 {
 	if (upload_start(scsi_id)) {
 		pstate = STATE_UPLOAD;
@@ -189,13 +190,13 @@ void do_upload(void)
 	}
 }
 
-void do_quit(void)
+static void do_quit(void)
 {
 	do_xfer_stop();
 	ExitToShell();
 }
 
-void do_menu_command(long menu_key)
+static void do_menu_command(long menu_key)
 {
 	short menu_id, menu_item;
 	unsigned char *item_ptr;
@@ -234,7 +235,7 @@ void do_menu_command(long menu_key)
 	HiliteMenu(0);
 }
 
-void do_in_content_progress(EventRecord *evt)
+static void do_in_content_progress(EventRecord *evt)
 {
 	if (progress_click(evt)) {
 		/* user clicked stop button */
@@ -242,7 +243,7 @@ void do_in_content_progress(EventRecord *evt)
 	}
 }
 
-void do_in_content_window(EventRecord *evt)
+static void do_in_content_window(EventRecord *evt)
 {
 	short itemcnt;
 	Str15 str;
@@ -277,7 +278,7 @@ void do_in_content_window(EventRecord *evt)
 	}
 }
 
-void evt_mousedown(EventRecord *evt)
+static void evt_mousedown(EventRecord *evt)
 {
 	short region;
 	WindowPtr window;
@@ -351,7 +352,7 @@ void evt_mousedown(EventRecord *evt)
 	}
 }
 
-void evt_keydown(EventRecord *evt)
+static void evt_keydown(EventRecord *evt)
 {
 	char k;
 
@@ -361,7 +362,7 @@ void evt_keydown(EventRecord *evt)
 	}
 }
 
-void evt_update(EventRecord *evt)
+static void evt_update(EventRecord *evt)
 {
 	short kind;
 	WindowPtr window;
@@ -382,7 +383,7 @@ void evt_update(EventRecord *evt)
 	}
 }
 
-void evt_activate(EventRecord *evt)
+static void evt_activate(EventRecord *evt)
 {
 	short kind;
 	WindowPtr window;
@@ -412,7 +413,7 @@ void evt_activate(EventRecord *evt)
 	}
 }
 
-void evt_os(EventRecord *evt)
+static void evt_os(EventRecord *evt)
 {
 	if (suspendResumeMessage & evt->message >> 24) {
 		if (pstate != STATE_OPEN) {

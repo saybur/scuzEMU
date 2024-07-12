@@ -15,8 +15,10 @@
  */
 
 #include "constants.h"
+#include "emu.h"
 #include "scsi.h"
 #include "util.h"
+#include "window.h"
 
 static short emu_count;
 static short emu_index[MAXIMUM_FILES];

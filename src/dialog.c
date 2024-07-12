@@ -15,6 +15,8 @@
  */
 
 #include "constants.h"
+#include "dialog.h"
+#include "util.h"
 
 /**
  * Handles drawing a dot pattern across elements of a dialog.

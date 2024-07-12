@@ -14,6 +14,8 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "types.h"
+
 /*
  * FIXME these probably belong in the resources instead.
  */

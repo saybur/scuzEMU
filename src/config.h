@@ -14,11 +14,11 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONFIG__
-#define __CONFIG__
+#ifndef __CONFIGH__
+#define __CONFIGH__
 
 extern Boolean g_use_qdcolor;
 
 void config_init(void);
 
-#endif /* __CONFIG__ */
+#endif /* __CONFIGH__ */

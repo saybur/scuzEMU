@@ -17,6 +17,7 @@
 #include <SCSI.h>
 
 #include "constants.h"
+#include "scsi.h"
 
 /**
  * Implements the SCSI communication with the emulator. The following commands are

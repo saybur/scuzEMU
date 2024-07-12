@@ -14,12 +14,12 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __TRANSFER__
-#define __TRANSFER__
+#ifndef __TRANSFERH__
+#define __TRANSFERH__
 
 void transfer_init(void);
 Boolean transfer_start(short scsi, short *icnt);
 void transfer_end(void);
 Boolean transfer_tick(void);
 
-#endif /* __TRANSFER__ */
+#endif /* __TRANSFERH__ */

@@ -14,8 +14,8 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __CONSTANTS__
-#define __CONSTANTS__
+#ifndef __CONSTANTSH__
+#define __CONSTANTSH__
 
 /*
  * ----------------------------------------
@@ -87,4 +87,4 @@
 #define STRI_GA_UP_BADLEN   8
 #define STRI_GA_UP_BADCHAR  9
 
-#endif /* __CONSTANTS__ */
+#endif /* __CONSTANTSH__ */

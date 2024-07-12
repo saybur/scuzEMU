@@ -14,6 +14,8 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
+
 Boolean g_use_qdcolor;
 
 void config_init(void)

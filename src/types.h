@@ -14,9 +14,9 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __TYPES__
-#define __TYPES__
+#ifndef __TYPESH__
+#define __TYPESH__
 
 void types_find(char *data, unsigned char *name, long *type, long *creator);
 
-#endif /* __TYPES__ */
+#endif /* __TYPESH__ */

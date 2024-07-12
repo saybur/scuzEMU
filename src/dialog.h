@@ -14,9 +14,9 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __DIALOG__
-#define __DIALOG__
+#ifndef __DIALOGH__
+#define __DIALOGH__
 
 Boolean dialog_open(short *scsi, short *open_type);
 
-#endif /* __DIALOG__ */
+#endif /* __DIALOGH__ */

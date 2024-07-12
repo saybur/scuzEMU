@@ -16,9 +16,12 @@
 
 #include "constants.h"
 #include "emu.h"
+#include "progress.h"
+#include "scsi.h"
+#include "transfer.h"
 #include "types.h"
-#include "window.h"
 #include "util.h"
+#include "window.h"
 
 /*
  * This compilation unit implements the file downloading logic.

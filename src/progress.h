@@ -14,8 +14,8 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __PROGRESS__
-#define __PROGRESS__
+#ifndef __PROGRESSH__
+#define __PROGRESSH__
 
 void progress_activate(Boolean active);
 Boolean progress_click(EventRecord *evt);
@@ -29,4 +29,4 @@ void progress_set_direction(Boolean inbound);
 void progress_set_file(StringPtr str);
 void progress_set_percent(short percent);
 
-#endif /* __PROGRESS__ */
+#endif /* __PROGRESSH__ */

@@ -14,8 +14,8 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __UTIL__
-#define __UTIL__
+#ifndef __UTILH__
+#define __UTILH__
 
 /**
  * A generic "I've run out of memory" message used to inform the user that the heap
@@ -42,4 +42,4 @@ void mem_fail(void);
 void repl_caret(unsigned char *s);
 void str_load(short id, short idx, unsigned char *str, short size);
 
-#endif /* __UTIL__ */
+#endif /* __UTILH__ */

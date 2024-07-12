@@ -14,12 +14,12 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __UPLOAD__
-#define __UPLOAD__
+#ifndef __UPLOADH__
+#define __UPLOADH__
 
 void upload_init(void);
 Boolean upload_start(short scsi);
 void upload_end(void);
 Boolean upload_tick(void);
 
-#endif /* __UPLOAD__ */
+#endif /* __UPLOADH__ */

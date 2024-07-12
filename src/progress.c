@@ -16,6 +16,7 @@
 
 #include "config.h"
 #include "constants.h"
+#include "progress.h"
 #include "util.h"
 
 #define FNAME_MAX_LEN 31

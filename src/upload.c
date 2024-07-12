@@ -17,6 +17,7 @@
 #include "constants.h"
 #include "progress.h"
 #include "scsi.h"
+#include "upload.h"
 #include "util.h"
 
 #define UPLOAD_BUF_SIZE 512

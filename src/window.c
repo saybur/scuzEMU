@@ -18,6 +18,7 @@
 #include "constants.h"
 #include "emu.h"
 #include "window.h"
+#include "util.h"
 
 static WindowPtr window;
 static ListHandle list;

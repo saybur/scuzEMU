@@ -14,8 +14,8 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __SCSI__
-#define __SCSI__
+#ifndef __SCSIH__
+#define __SCSIH__
 
 long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length);
 long scsi_read_file(short scsi_id, short index, long offset, char *data, short length);
@@ -24,4 +24,4 @@ long scsi_write_start(short scsi_id, unsigned char* name);
 long scsi_write_block(short scsi_id, long offset, char *data, short length);
 long scsi_write_end(short scsi_id);
 
-#endif /* __SCSI__ */
+#endif /* __SCSIH__ */

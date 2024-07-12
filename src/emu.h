@@ -14,12 +14,12 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __EMU__
-#define __EMU__
+#ifndef __EMUH__
+#define __EMUH__
 
 void emu_init(void);
 Boolean emu_get_info(short item, short *index, long* size);
 short emu_populate_list(ListHandle list, Handle data, short length);
 void emu_mount(short scsi_id);
 
-#endif /* __EMU__ */
+#endif /* __EMUH__ */

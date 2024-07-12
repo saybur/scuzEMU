@@ -14,8 +14,8 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __WINDOW__
-#define __WINDOW__
+#ifndef __WINDOWH__
+#define __WINDOWH__
 
 Boolean window_init(void);
 
@@ -31,4 +31,4 @@ void window_show(Boolean show);
 void window_text(unsigned char *str);
 void window_update(void);
 
-#endif /* __WINDOW__ */
+#endif /* __WINDOWH__ */
