@@ -42,6 +42,7 @@
 #define ALRT_NO_IMAGES      130
 #define ALRT_NO_FILES       131
 #define ALRT_DUPLICATES     132
+#define ALRT_UPLOAD_DUP     133
 #define ALRT_GENERIC        256
 #define ALRT_BAD_VERSION    257
 #define ALRT_SCSI_ERROR     258

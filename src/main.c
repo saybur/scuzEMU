@@ -161,8 +161,8 @@ static void update_menus(EventRecord *evt)
 		}
 	}
 
-	/* allow uploading only when we are connected to a device */
-	if (pstate == STATE_OPEN) {
+	/* allow uploading only when we are connected to a device with a file list */
+	if (pstate == STATE_OPEN && !open_type) {
 		EnableItem(file, MENUI_UPLOAD);
 	} else {
 		DisableItem(file, MENUI_UPLOAD);
@@ -183,7 +183,7 @@ static void do_open(void)
 
 static void do_upload(void)
 {
-	if (upload_start(scsi_id)) {
+	if (pstate == STATE_OPEN && !open_type && upload_start(scsi_id)) {
 		pstate = STATE_UPLOAD;
 		progress_set_direction(false);
 		progress_show(true);

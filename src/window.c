@@ -148,7 +148,7 @@ void window_click(EventRecord *evt, short *cnt)
  * 64 total bytes of storage.
  *
  * @param item  the item number (i.e. list vertical index) to fetch.
- * @param str   address of string to store the result in.
+ * @param str   address of string to store the Pascal-style result in.
  */
 void window_get_item_name(short item, unsigned char *str)
 {

@@ -155,6 +155,15 @@ void emu_init(void)
 }
 
 /**
+ * @return  the current count of the emulation subsystem, representing how many entries
+ *          there are in internal storage.
+ */
+short emu_get_count(void)
+{
+	return emu_count;
+}
+
+/**
  * Provides information on the given item from the original query against the emulator.
  * This also does a range check and will return false if the item number is invalid.
  *

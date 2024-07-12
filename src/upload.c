@@ -15,10 +15,12 @@
  */
 
 #include "constants.h"
+#include "emu.h"
 #include "progress.h"
 #include "scsi.h"
 #include "upload.h"
 #include "util.h"
+#include "window.h"
 
 #define UPLOAD_BUF_SIZE 512
 
@@ -63,9 +65,9 @@ static Boolean upload_check_name(unsigned char *name)
 	if (! name) return false;
 	for (i = 1; i <= name[0]; i++) {
 		c = name[i];
-		if (! ((c > 48 && c <= 57) /* 0-9 */
-				|| (c > 65 && c <= 90) /* A-Z */
-				|| (c > 97 && c <= 122) /* a-z */
+		if (! ((c >= 48 && c <= 57) /* 0-9 */
+				|| (c >= 65 && c <= 90) /* A-Z */
+				|| (c >= 97 && c <= 122) /* a-z */
 				|| c == '_'
 				|| c == '-'
 				|| c == '.')) {
@@ -73,6 +75,44 @@ static Boolean upload_check_name(unsigned char *name)
 		}
 	}
 	return true;
+}
+
+/**
+ * Checks if there is a file in the listing with a matching name.
+ *
+ * As of 2024-07-11, there appears to be a bug where the file open (at least on my
+ * device) does not rewind to the start of the file. This could also be a bug with
+ * part of the implementation here. In any event, this comment can be removed once
+ * the issue is isolated or resolved - in either case, the user probably wants to
+ * make a decision about this before proceeding.
+ *
+ * @param str  the Pascal string to check.
+ * @return     true if there is a duplicate, false otherwise.
+ */
+static Boolean upload_check_duplicate(unsigned char *name)
+{
+	short i, cnt;
+	unsigned char *str;
+
+	if (! (str = (unsigned char *) NewPtr(64))) {
+		mem_fail();
+	}
+
+	cnt = emu_get_count();
+
+	for (i = 0; i < cnt; i++) {
+		window_get_item_name(i, str);
+
+		/* this is a bit sloppy, but at least is case-insensitive for FAT */
+		/* a more intelligent approach might be needed in the future */
+		if (EqualString(name, str, false, false)) {
+			DisposPtr((Ptr) str);
+			return true;
+		}
+	}
+
+	DisposPtr((Ptr) str);
+	return false;
 }
 
 /**
@@ -84,10 +124,16 @@ void upload_init(void)
 }
 
 /**
- * Called when a user requests an upload. This will invoke the file chooser, get
- * the picked file, verify it will be OK (hopefully) to transfer, pop up the progress
- * bar, and start the file transfer process. As with the other subsystem, if this
- * returns true the process started OK: call tick() repeatedly until it returns false.
+ * Called when a user requests an upload. This will:
+ *
+ * 1) Invoke the file chooser,
+ * 2) Get the picked file,
+ * 3) Verify it will be OK (hopefully) to transfer, including by checking the name
+ *    against FAT rules and the items already in the list,
+ * 4) Setup the progress bar (but not show it) and execute the file transfer start command.
+ *
+ * As with the other subsystem, if this returns true the process started OK: call tick()
+ * repeatedly until it returns false.
  *
  * @param scsi  the SCSI ID to send the file to.
  * @return      true if the process started OK, false otherwise.
@@ -136,6 +182,13 @@ Boolean upload_start(short scsi)
 	if (! upload_check_name(reply.fName)) {
 		alert_template(0, ALRT_GENERIC, STRI_GA_UP_BADCHAR);
 		goto upload_start_fail;
+	}
+	if (upload_check_duplicate(reply.fName)) {
+		if (CautionAlert(ALRT_UPLOAD_DUP, 0) == 2) {
+			/* they indicated an overwrite is OK, so be it! */
+		} else {
+			goto upload_start_fail;
+		}
 	}
 	if (! (name = (unsigned char *) NewPtrClear(33))) {
 		mem_fail();
