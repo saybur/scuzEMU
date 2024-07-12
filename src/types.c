@@ -162,4 +162,12 @@ void types_find(char *data, unsigned char *name, long *type, long *creator)
 		*creator = 'SITx';
 		return;
 	}
+
+	/* Compact Pro */
+	if (suffix == '.cpt'
+			&& data[0] == 0x01) {
+		*type = 'PACT';
+		*creator = 'CPCT';
+		return;
+	}
 }
