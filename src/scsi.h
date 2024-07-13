@@ -17,6 +17,9 @@
 #ifndef __SCSIH__
 #define __SCSIH__
 
+void scsi_alert(long fail);
+
+long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver);
 long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length);
 long scsi_read_file(short scsi_id, short index, long offset, char *data, short length);
 long scsi_set_image(short scsi_id, short index);

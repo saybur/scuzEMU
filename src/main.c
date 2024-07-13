@@ -31,6 +31,7 @@
 #define STATE_UPLOAD    4
 
 static short scsi_id;
+static unsigned char tb_api;
 static short open_type;
 static short pstate;
 
@@ -68,7 +69,7 @@ static void do_list_update(void)
 	if (err = scsi_list_files(scsi_id, open_type, &h, &length)) {
 		window_show(false);
 		pstate = STATE_IDLE;
-		alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+		scsi_alert(err);
 	} else {
 		if (length <= 0) {
 			count = 0;
@@ -176,7 +177,17 @@ static void update_menus(EventRecord *evt)
 
 static void do_open(void)
 {
-	if (dialog_open(&scsi_id, &open_type)) {
+	Boolean is_emu;
+	long err;
+	short s, o;
+
+	s = scsi_id;
+	o = open_type;
+
+	if (dialog_open(&s, &o)
+			&& config_check_mode(s)) {
+		scsi_id = s;
+		open_type = o;
 		do_list_update();
 	}
 }

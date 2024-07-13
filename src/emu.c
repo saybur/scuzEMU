@@ -312,7 +312,7 @@ void emu_mount(short scsi_id)
 	if (item >= 0 && item < emu_count) {
 		index = emu_index[item];
 		if (err = scsi_set_image(scsi_id, index)) {
-			alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+			scsi_alert(err);
 		} else {
 			emu_eject(scsi_id);
 			SetCursor(&arrow);

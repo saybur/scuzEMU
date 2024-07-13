@@ -199,7 +199,7 @@ Boolean upload_start(short scsi)
 	err = scsi_write_start(scsi_id, name);
 	DisposPtr((Ptr) name);
 	if (err) {
-		alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+		scsi_alert(err);
 		goto upload_start_fail;
 	}
 
@@ -240,7 +240,7 @@ void upload_end(void)
 
 	/* close up; at this point errors can't really be resolved, just alert the user */
 	if (err = scsi_write_end(scsi_id)) {
-		alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+		scsi_alert(err);
 	}
 	if (err = FSClose(fref)) {
 		upload_alert_ferr(err);
@@ -279,7 +279,7 @@ Boolean upload_tick(void)
 		if (err = FSRead(fref, &xfer, *data)) {
 			upload_alert_ferr(err);
 		} else if (err = scsi_write_block(scsi_id, fblk, *data, (short) xfer)) {
-			alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+			scsi_alert(err);
 		}
 		HUnlock(data);
 		fblk++;

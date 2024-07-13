@@ -174,6 +174,18 @@ data 'DITL' (133, "Duplicate Upload") {
 	$"5072 6F63 6565 6420 616E 7977 6179 3F00"            /* Proceed anyway?. */
 };
 
+data 'DITL' (134, "Unrecognized Emulator") {
+	$"0002 0000 0000 0047 00FC 005B 0136 0403"            /* .......G...[.6.. */
+	$"5965 7300 0000 0000 0047 00B5 005B 00EF"            /* Yes......G.µ.[.. */
+	$"0402 4E6F 0000 0000 000A 0054 003A 0136"            /* ..No.......T.:.6 */
+	$"8855 5468 6520 6465 7669 6365 2064 6964"            /* àUThe device did */
+	$"206E 6F74 2072 6573 706F 6E64 206C 696B"            /*  not respond lik */
+	$"6520 6120 7479 7069 6361 6C20 656D 756C"            /* e a typical emul */
+	$"6174 6F72 2E20 576F 756C 6420 796F 7520"            /* ator. Would you  */
+	$"6C69 6B65 2074 6F20 636F 6E6E 6563 7420"            /* like to connect  */
+	$"616E 7977 6179 3F00"                                /* anyway?. */
+};
+
 data 'ALRT' (128, "About") {
 	$"0030 0020 00F2 016E 0080 4444"                      /* .0. ...n.ÄDD */
 };
@@ -216,6 +228,10 @@ data 'ALRT' (256, "Generic") {
 
 data 'ALRT' (133, "Duplicate Upload") {
 	$"0028 0028 009D 0168 0085 5555"                      /* .(.(.ù.h.ÖUU */
+};
+
+data 'ALRT' (134, "Unrecognized Emulator") {
+	$"0028 0028 008D 0168 0086 5555"                      /* .(.(.ç.h.ÜUU */
 };
 
 data 'ICON' (128) {

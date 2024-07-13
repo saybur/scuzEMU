@@ -18,6 +18,7 @@
 
 #include "constants.h"
 #include "scsi.h"
+#include "util.h"
 
 /**
  * Implements the SCSI communication with the emulator. The following commands are
@@ -51,8 +52,10 @@
  * 0x05: SCSIComplete
  * 0x06: status was not COMMAND COMPLETE, in the low word, the high byte is the
  *       message and the low byte is SCSI status
- * 0x07: memory allocation failure
  */
+
+#define TOOLBOX_MODE_PAGE       0x31
+#define TOOLBOX_MODE_PAGE_SIZE  42
 
 /**
  * Low-level general handler for running a transaction against a SCSI target.
@@ -185,6 +188,97 @@ static long scsi_request_sense(short scsi_id, long *sense)
 }
 
 /**
+ * Presents a user Alert related to a SCSI failure.
+ *
+ * @param fail  the failure code from another function in this unit.
+ */
+void scsi_alert(long fail)
+{
+	alert_template_error(0, ALRT_SCSI_ERROR, HiWord(fail), LoWord(fail));
+}
+
+/**
+ * Fetches the emulator mode page 0x31 from the device and provides the API version
+ * being used.
+ *
+ * Unlike the other functions in this unit, this one will only return an error code if
+ * a SCSI communication fault occurs. In all other cases where the mode page cannot be
+ * parsed, the failure code will be zero and validity result will be set to false.
+ *
+ * @param scsi_id  device ID on [0, 6].
+ * @param *valid   ture if API version information is valid, false otherwise.
+ * @param *ver     the API version being used.
+ * @return         fatal error code only, per above.
+ */
+long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver)
+{
+	char cdb[6];
+	long fail, sense;
+	char *data;
+
+	/* reserve enough memory for the page and both headers */
+	if (! (data = NewPtr(TOOLBOX_MODE_PAGE_SIZE + 6))) {
+		mem_fail();
+	}
+
+	/*
+	 * Do two requests: first is just the required header, to see if there is
+	 * a page present and if it has the expected length, then a second request
+	 * to get the data itself.
+	 */
+
+	cdb[0] = 0x1A;
+	cdb[1] = 0x08; /* disable block descriptors */
+	cdb[2] = TOOLBOX_MODE_PAGE;
+	cdb[3] = 0x00;
+	cdb[4] = 4;
+	cdb[5] = 0x00;
+
+	/* check if the device can return enough data */
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) data, 4)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		if (fail == 0x40005 || fail >= 0x60000) {
+			/*
+			 * Either didn't transition to DATA OUT (likely page not implemented)
+			 * or ended with CHECK CONDITION for some other reason.
+			 */
+			fail = 0;
+		}
+		goto scsi_get_emu_api_fail;
+	}
+	if (data[0] != TOOLBOX_MODE_PAGE_SIZE + 5) {
+		goto scsi_get_emu_api_fail;
+	}
+
+	/* ask for that data now */
+	cdb[4] = TOOLBOX_MODE_PAGE_SIZE + 6;
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) data, TOOLBOX_MODE_PAGE_SIZE + 6)) {
+		scsi_request_sense(scsi_id, &sense);
+		if (fail >= 0x60000) {
+			/* this time treat a failure to transition to DATA OUT as fatal */
+			fail = 0;
+		}
+		goto scsi_get_emu_api_fail;
+	}
+
+	/*
+	 * At present, wiki guidance is to check for an exact match against
+	 * the vendor-specific string. If that is updated to something more
+	 * universal this can be changed to reflect that.
+	 */
+	*ver = data[TOOLBOX_MODE_PAGE_SIZE + 5];
+	*valid = (*ver == 0x00);
+
+	DisposPtr(data);
+	return 0;
+
+scsi_get_emu_api_fail:
+	*valid = false;
+	DisposPtr(data);
+	return fail;
+}
+
+/**
  * Queries a SCSI emulator and asks for a list of available items.
  *
  * To list files requires 2 sequential commands:
@@ -231,7 +325,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 	*length = 40 * data_len;
 	if (*length <= 0) return 0;
 	if (!(h = NewHandle(*length))) {
-		return 0x70001;
+		mem_fail();
 	}
 
 	if (open_type) {

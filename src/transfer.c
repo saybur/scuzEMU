@@ -391,7 +391,7 @@ Boolean transfer_tick(void)
 	/* perform data exchange */
 	HLock(data);
 	if (err = scsi_read_file(scsi_id, findex, fblk, *data, (short) xfer)) {
-		alert_template_error(0, ALRT_SCSI_ERROR, HiWord(err), LoWord(err));
+		scsi_alert(err);
 	} else if (err = FSWrite(fref, &xfer, *data)) {
 		transfer_alert_ferr(err);
 	}

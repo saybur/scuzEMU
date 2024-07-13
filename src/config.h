@@ -19,6 +19,7 @@
 
 extern Boolean g_use_qdcolor;
 
+Boolean config_check_mode(short scsi);
 void config_init(void);
 
 #endif /* __CONFIGH__ */
