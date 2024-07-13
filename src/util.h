@@ -40,6 +40,7 @@ Boolean init_is_wne(void);
 Boolean init_program(void (*quit)(void), short ptrcnt);
 void mem_fail(void);
 void repl_caret(unsigned char *s);
+Boolean str_eq(char *a, const char *b, short len);
 void str_load(short id, short idx, unsigned char *str, short size);
 
 #endif /* __UTILH__ */

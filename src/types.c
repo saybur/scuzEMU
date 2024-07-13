@@ -15,6 +15,7 @@
  */
 
 #include "types.h"
+#include "util.h"
 
 /*
  * FIXME these probably belong in the resources instead.
@@ -72,25 +73,6 @@ static long suffix_id(unsigned char *name)
 }
 
 /**
- * Quick and dirty memcmp() to avoid importing the ANSI libraries. Is there a Toolbox
- * call that can do this?
- *
- * @param a    first block to compare.
- * @param b    second block to compare.
- * @param len  length of the data to compare.
- * @return     true if equal, false if not.
- */
-static Boolean is_eql(char *a, const char *b, short len)
-{
-	short i;
-
-	for (i = 0; i < len; i++) {
-		if (a[i] != b[i]) return false;
-	}
-	return true;
-}
-
-/**
  * Try to find a suitable file type and creator for a file, given the first block
  * or so of data (for magic numbers) and the filename.
  *
@@ -129,7 +111,7 @@ void types_find(char *data, unsigned char *name, long *type, long *creator)
 
 	/* BinHex 4 */
 	if (suffix == '.hqx'
-			&& is_eql(data, BINHEX_MAGIC, sizeof(BINHEX_MAGIC) - 1)) {
+			&& str_eq(data, BINHEX_MAGIC, sizeof(BINHEX_MAGIC) - 1)) {
 		*type = 'TEXT';
 		*creator = 'SITx';
 		return;
@@ -137,8 +119,8 @@ void types_find(char *data, unsigned char *name, long *type, long *creator)
 
 	/* Stuffit <5 */
 	if (suffix == '.sit'
-			&& is_eql(data, "SIT!", 4)
-			&& is_eql(&(data[10]), SIT_MAGIC, sizeof(SIT_MAGIC) - 1)) {
+			&& str_eq(data, "SIT!", 4)
+			&& str_eq(&(data[10]), SIT_MAGIC, sizeof(SIT_MAGIC) - 1)) {
 		/*
 		 * Just a guess, but the version field mentioned in the Unarchiver
 		 * documentation seems to line up with the difference between SIT! files
@@ -157,7 +139,7 @@ void types_find(char *data, unsigned char *name, long *type, long *creator)
 
 	/* Stuffit 5+ */
 	if (suffix == '.sit'
-			&& is_eql(data, SIT5_MAGIC, sizeof(SIT5_MAGIC) - 1)) {
+			&& str_eq(data, SIT5_MAGIC, sizeof(SIT5_MAGIC) - 1)) {
 		*type = 'SIT5';
 		*creator = 'SITx';
 		return;

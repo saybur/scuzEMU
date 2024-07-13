@@ -268,6 +268,25 @@ void repl_caret(unsigned char *s)
 }
 
 /**
+ * Quick and dirty memcmp()-alike to avoid importing the ANSI libraries.
+ * Is there a Toolbox call that can do this?
+ *
+ * @param a    first block to compare.
+ * @param b    second block to compare.
+ * @param len  length of the data to compare.
+ * @return     true if equal, false if not.
+ */
+Boolean str_eq(char *a, const char *b, short len)
+{
+	short i;
+
+	for (i = 0; i < len; i++) {
+		if (a[i] != b[i]) return false;
+	}
+	return true;
+}
+
+/**
  * Handles loading strings from resources when the final storage is limited by size.
  * This will pull the string from the resource and copy it into the storage, truncating
  * as needed.
