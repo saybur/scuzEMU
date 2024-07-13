@@ -201,6 +201,33 @@ static void do_upload(void)
 	}
 }
 
+static void do_download(void)
+{
+	Str15 str;
+
+	if (pstate != STATE_OPEN) return;
+
+	busy_cursor();
+
+	if (open_type) {
+		emu_mount(scsi_id);
+		SetCursor(&arrow);
+	} else {
+		if (transfer_start(scsi_id)) {
+			pstate = STATE_DOWNLOAD;
+			str_load(STR_GENERAL, STRI_GEN_DOWNLOAD, str, 16);
+			window_text(str);
+
+			progress_set_file(str);
+			progress_set_direction(true);
+			progress_show(true);
+		} else {
+			/* failed to start the transfer */
+			SetCursor(&arrow);
+		}
+	}
+}
+
 static void do_quit(void)
 {
 	do_xfer_stop();
@@ -256,36 +283,12 @@ static void do_in_content_progress(EventRecord *evt)
 
 static void do_in_content_window(EventRecord *evt)
 {
-	short itemcnt;
-	Str15 str;
+	Boolean xfer;
 
-	window_click(evt, &itemcnt);
+	window_click(evt, &xfer);
 
-	if (itemcnt > 0) {
-		/* veto if a transfer is active */
-		if (pstate != STATE_OPEN) return;
-
-		busy_cursor();
-
-		if (open_type) {
-			emu_mount(scsi_id);
-			SetCursor(&arrow);
-		} else {
-			if (transfer_start(scsi_id, &itemcnt)) {
-				pstate = STATE_DOWNLOAD;
-				str_load(STR_GENERAL, STRI_GEN_DOWNLOAD, str, 16);
-				window_text(str);
-
-				progress_set_percent(0);
-				progress_set_count(itemcnt);
-				progress_set_file(str);
-				progress_set_direction(true);
-				progress_show(true);
-			} else {
-				/* failed to start the transfer */
-				SetCursor(&arrow);
-			}
-		}
+	if (xfer) {
+		do_download();
 	}
 }
 
@@ -363,13 +366,30 @@ static void evt_mousedown(EventRecord *evt)
 	}
 }
 
-static void evt_keydown(EventRecord *evt)
+static void evt_keydown(EventRecord *evt, Boolean autokey)
 {
 	char k;
+	WindowPtr window;
+	short kind;
+	long ref;
 
 	k = evt->message & charCodeMask;
-	if (evt->modifiers & cmdKey) {
+	if (!autokey && (evt->modifiers & cmdKey)) {
 		do_menu_command(MenuKey(k));
+	} else {
+		window = FrontWindow();
+		if (!window) return;
+		kind = ((WindowPeek) window)->windowKind;
+		ref = ((WindowPeek) window)->refCon;
+
+		if (kind == userKind && ref == WIND_MAIN) {
+			if (!autokey && (k == 0x03 || k == 0x0D)) {
+				/* enter/return key */
+				do_download();
+			} else {
+				window_key(evt);
+			}
+		}
 	}
 }
 
@@ -499,7 +519,10 @@ int main(void)
 			evt_mousedown(&evt);
 			break;
 		case keyDown:
-			evt_keydown(&evt);
+			evt_keydown(&evt, false);
+			break;
+		case autoKey:
+			evt_keydown(&evt, true);
 			break;
 		case updateEvt:
 			update_menus(&evt);

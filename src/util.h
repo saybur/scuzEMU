@@ -38,6 +38,8 @@ void busy_cursor(void);
 void center_window(WindowPtr window);
 Boolean init_is_wne(void);
 Boolean init_program(void (*quit)(void), short ptrcnt);
+void list_clear_selections(ListHandle h);
+char lowerc(char c);
 void mem_fail(void);
 void repl_caret(unsigned char *s);
 Boolean str_eq(char *a, const char *b, short len);

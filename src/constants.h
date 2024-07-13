@@ -27,6 +27,7 @@
 #define SCSI_TIMEOUT        300
 #define WINDOW_MIN_HEIGHT   200
 #define WINDOW_MIN_WIDTH    240
+#define LIST_TYPING_TIME    90
 
 /* This is more than what is actually allowed (100), here for possible future changes */
 #define MAXIMUM_FILES       255

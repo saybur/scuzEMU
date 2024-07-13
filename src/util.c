@@ -231,6 +231,35 @@ Boolean init_program(void (*quit)(void), short ptrcnt)
 }
 
 /**
+ * tolower() equivalent. This currently supports the low ASCII characters and nothing
+ * else. It would be nice at some point to expand compatibility if internationalization
+ * ends up on the radar.
+ *
+ * @param c  the character to lowercase.
+ * @return   the lowercase character, or the input character if no change was made.
+ */
+char lowerc(char c)
+{
+	if (c >= 0x41 && c <= 0x5A) c += 0x20;
+	return c;
+}
+
+/**
+ * Deselect everything within a list.
+ *
+ * @param list  the list to perform deselection within.
+ */
+void list_clear_selections(ListHandle list)
+{
+	Point p;
+
+	SetPt(&p, 0, 0);
+	while (LGetSelect(true, &p, list)) {
+		LSetSelect(false, p, list);
+	}
+}
+
+/**
  * Generic memory error routine that should be called when the heap is exhausted
  * or a Memory Manager error occurs.
  *

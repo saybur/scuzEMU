@@ -17,9 +17,12 @@
 #ifndef __WINDOWH__
 #define __WINDOWH__
 
+pascal short list_cmp(char *cell, char *test, short cl, short tl);
+
 Boolean window_init(void);
 
-void window_click(EventRecord *evt, short *cnt);
+void window_click(EventRecord *evt, Boolean *dclick);
+void window_key(EventRecord *evt);
 void window_next(short *i);
 void window_get_item_name(short item, Str255 str);
 short window_populate(short mode, Handle h, short count);

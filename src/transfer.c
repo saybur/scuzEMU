@@ -233,24 +233,25 @@ void transfer_init(void)
 }
 
 /**
- * Starts a download transaction. This is called when the user starts the
- * process and will do a few things:
+ * Starts a download transaction. This is called when the user performs
+ * some action indicating they want to download something. This will do
+ * a few things:
  *
- * 1) Invoke a file chooser to select where file(s) are going to be saved.
- * 2) Set up internal memory and state to support the transfer.
+ * 1) Get information about the files to be downloaded from the list,
+ * 2) Invoke a file chooser to select where file(s) are going to be saved.
+ * 3) Set up internal memory and state to support the transfer.
  *
  * Call transfer_tick() repeatedly to actually progress with the transfer.
  * See that function for more details.
  *
  * Upon being called, this will reach into the window list and find the
- * selected cells.
+ * selected cells. If none are found this will return false, which is not
+ * (always) an error.
  *
  * @param scsi   the SCSI ID to work with.
- * @param icnt   set to the number of items in the above list, will be
- *               set to the actual number of items upon non-error return.
  * @return       true if the starting process went OK, false otherwise.
  */
-Boolean transfer_start(short scsi, short *icnt)
+Boolean transfer_start(short scsi)
 {
 	Point p;
 	SFReply out;
@@ -263,13 +264,18 @@ Boolean transfer_start(short scsi, short *icnt)
 	scsi_id = scsi;
 	fopen = false;
 
-	/* setup item storage */
-	if (*icnt <= 0) {
-		/* TODO be noiser, this is probably a programming error */
-		*icnt = 0;
+	/* scan the list and figure out how many items should be transferred */
+	items_count = 0; t = 0;
+	window_next(&t);
+	while (t >= 0) {
+		items_count++; t++;
+		window_next(&t);
+	}
+	if (items_count <= 0) {
 		return false;
 	}
-	items_count = *icnt;
+
+	/* setup item storage */
 	items_cur = 0;
 	if (!(items_ptr = (short *) NewPtr(items_count * 2))) {
 		mem_fail();
@@ -321,7 +327,8 @@ Boolean transfer_start(short scsi, short *icnt)
 		mem_fail();
 	} else {
 		session = true;
-		*icnt = items_count;
+		progress_set_percent(0);
+		progress_set_count(items_count);
 		return true;
 	}
 

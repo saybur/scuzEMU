@@ -25,6 +25,37 @@ static ListHandle list;
 static Str31 text;
 static short content_type;
 
+static Str15 search;
+static long last_search;
+
+/**
+ * Callback for LSearch that implements the common form of "find the first thing that
+ * matches this random text string" rather than a full-text match.
+ */
+pascal short list_cmp(char *cell, char *test, short cl, short tl)
+{
+	short len, i;
+	Boolean match;
+
+	len = cl;
+	if (tl < cl) len = tl;
+
+	match = true;
+	for (i = 0; i < len; i++) {
+		if (lowerc(cell[i]) != lowerc(test[i])) {
+			match = false;
+			break;
+		}
+	}
+
+	/* needs inverted logic */
+	if (match) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
 /**
  * Draws the window.
  *
@@ -93,6 +124,9 @@ Boolean window_init(void)
 	list = LNew(&list_vis, &list_con, list_cell, 0, window, true, true, false, true);
 	HLock((Handle) list);
 
+	search[0] = 0;
+	last_search = 0;
+
 	content_type = -1;
 	return true;
 }
@@ -113,33 +147,20 @@ void window_activate(Boolean active)
 /**
  * Handles /inContent/ on /mouseDown/.
  *
- * This is narrowly tailored to mouse clicks on the list and will need expansion
- * if more program features are added.
- *
- * If there was a double-click on the list, this will scan through the selected cells
- * and return the number of cells selected. You can then scan the list via window_next().
- *
- * @param evt  the event record causing the click.
- * @param cnt  the number of selected cells.
+ * @param evt     the event record causing the click.
+ * @param dclick  true if there was a list double-click.
  */
-void window_click(EventRecord *evt, short *cnt)
+void window_click(EventRecord *evt, Boolean *dclick)
 {
-	Cell selected_cell;
-	short i;
+	GrafPtr old_port;
 
-	i = 0;
-
+	GetPort(&old_port);
 	SetPort(window);
 	GlobalToLocal(&(evt->where));
 
-	if (LClick(evt->where, evt->modifiers, list)) {
-		SetPt(&selected_cell, 0, 0);
-		while (LGetSelect(true, &selected_cell, list)) {
-			i++;
-			selected_cell.v++;
-		}
-	}
-	*cnt = i;
+	*dclick = LClick(evt->where, evt->modifiers, list);
+
+	SetPort(old_port);
 }
 
 /**
@@ -159,6 +180,109 @@ void window_get_item_name(short item, unsigned char *str)
 	l = 63;
 	LGetCell(&(str[1]), &l, p, list);
 	str[0] = l & 0xFF;
+}
+
+/**
+ * Handles /inContent/ on /keyDown/.
+ *
+ * @param evt  the event record causing the click.
+ */
+void window_key(EventRecord *evt)
+{
+	char c;
+	short count;
+	long t;
+	Point p, op;
+	short is_shift;
+
+	is_shift = evt->modifiers & shiftKey;
+	/* hack: if list doesn't allow multiple selection pretend shift is off */
+	if ((*list)->selFlags & lOnlyOne) {
+		is_shift = 0;
+	}
+
+	c = evt->message & 0xFF;
+	if (c >= 0x20) {
+		/* interpret as character */
+
+		/* add to existing text search or not? */
+		t = TickCount();
+		if (t - last_search > LIST_TYPING_TIME) {
+			search[0] = 1;
+			search[1] = c;
+			last_search = t;
+		} else if (search[0] >= 14) {
+			/* no room, ignore; fast typist! (or coding error) */
+		} else {
+			last_search = t;
+			search[++search[0]] = c;
+		}
+
+		/* find cell with this name */
+		SetPt(&p, 0, 0);
+		if (LSearch(&(search[1]), search[0], list_cmp, &p, list)) {
+			/* deselect old cells */
+			list_clear_selections(list);
+
+			/* select the new cell */
+			LSetSelect(true, p, list);
+			LAutoScroll(list);
+		}
+	} else if (c >= 0x1C) {
+		/* arrow keys */
+
+		count = emu_get_count();
+		SetPt(&p, 0, 0);
+		if (LGetSelect(true, &p, list)) {
+			/* existing cell is selected, start from there */
+			if (! is_shift) {
+				list_clear_selections(list);
+			}
+
+			/* shift to new cell position and select it (with roll-over) */
+			if (c & 1) {
+				/* right/down */
+				if (is_shift) {
+					/* move to last selected cell before expanding */
+					while (LGetSelect(true, &p, list)) {
+						p.v++;
+					}
+				} else {
+					p.v++;
+				}
+				if (p.v >= count) {
+					if (is_shift) {
+						/* avoid wrapping, it feels weird */
+						p.v = count - 1;
+					} else {
+						p.v = 0;
+					}
+				}
+			} else {
+				/* left/up */
+				p.v--;
+				if (p.v < 0) {
+					if (is_shift) {
+						p.v = 0;
+					} else {
+						p.v = count - 1;
+					}
+				}
+			}
+
+			/* if legal, select cell */
+			if (p.v >= 0 && p.v < count) {
+				LSetSelect(true, p, list);
+			}
+		} else {
+			/* just select the first list entry */
+			LSetSelect(true, p, list);
+		}
+		LAutoScroll(list);
+	} else if (c == 0x1B) {
+		/* esc/clear */
+		list_clear_selections(list);
+	}
 }
 
 /**
