@@ -5,6 +5,7 @@ Welcome to scuzEMU, an open source Mac "SCSI EMulator Utility." This program
 allows you to remotely control certain SCSI emulators to:
 
 * Download files within a /shared/ folder on the SD card,
+* Upload files into that folder,
 * Switch between different removable disk images on supported drives (CD-ROMs).
 
 ![example download in progress](https://github.com/saybur/scuzEMU/blob/main/extra/example_download.png?raw=true)
@@ -14,7 +15,7 @@ Compatibility
 
 Minimum firmware versions tested to work with this application:
 
-* ZuluSCSI 2024.05.17
+* ZuluSCSI 2024.05.17 (recommend using nightly release for CD-ROM switching)
 
 If you find this works with an emulator, or if you have changes you would like
 to contribute, please contact @saybur via 68kmla.org or let me know on Github.
@@ -46,18 +47,17 @@ To work, this software needs to issue SCSI commands in the undocumented vendor
 range. This could _theoretically_ result in an unsupported device doing
 something unexpected. While it is unlikely anything catastrophic would happen
 in response to these commands, it is still best to use care when selecting the
-SCSI ID and only choose known-working devices. A future release may incorporate
-checking for the paranoid but I would like to avoid artificially limiting
-compatibility; see Why Did You Make This? for thoughts on that.
+SCSI ID and only choose known-working devices.
+
+As of version 0.4, the application checks the mode page version and will notify
+you if it thinks there might be an incompatibility. You can bypass this by
+clicking "Yes" when asked if you'd like to continue connecting.
 
 Bugs And Missing Features
 -------------------------
 
 The following issues are known to exist in this application:
 
-* Keyboard arrows / enter key are not handled by the file/image list.
-* Uploading files is unimplemented (I haven't decided if this would be useful
-  or not).
 * Some graphical elements are missing.
 * Downloading is slower than it should be; adding blind transfers on supported
   systems would probably improve this.
@@ -69,7 +69,6 @@ More generally:
   on my retro Macs and have done most of my debugging there.
 * The user interface is simple, to a fault. I haven't decided if that is good
   or bad yet.
-* As noted earlier no checks are made to verify compatibility for commands.
 
 I am a novice Mac application developer and the code likely shows it. There are
 many more bugs yet to be discovered. If you find one, please report it!
@@ -95,6 +94,19 @@ Changelog
 ---------
 
 Major changes in each release:
+
+### 0.4
+
+- You can now upload to the memory card via the File menu.
+- Keyboard navigation has been added.
+- Mode page parsing of the API version.
+- Included type/creator for Compact Pro.
+
+### 0.3
+
+- Switching CD images is now automatic.
+- Type/creator is assigned to certain file types (hqx/bin/sit).
+- Files can download while the program is in the background.
 
 ### 0.2
 
