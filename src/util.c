@@ -245,21 +245,6 @@ char lowerc(char c)
 }
 
 /**
- * Deselect everything within a list.
- *
- * @param list  the list to perform deselection within.
- */
-void list_clear_selections(ListHandle list)
-{
-	Point p;
-
-	SetPt(&p, 0, 0);
-	while (LGetSelect(true, &p, list)) {
-		LSetSelect(false, p, list);
-	}
-}
-
-/**
  * Generic memory error routine that should be called when the heap is exhausted
  * or a Memory Manager error occurs.
  *

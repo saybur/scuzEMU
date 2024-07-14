@@ -14,22 +14,12 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __WINDOWH__
-#define __WINDOWH__
+#ifndef __LISTH__
+#define __LISTH__
 
-Boolean window_init(void);
+void list_clear_selections(ListHandle list);
+pascal short list_cmp(char *cell, char *test, short cl, short tl);
+void list_key(ListHandle list, EventRecord *evt);
+void list_next(ListHandle list, short *i);
 
-void window_click(EventRecord *evt, Boolean *dclick);
-void window_key(EventRecord *evt);
-void window_next(short *i);
-void window_get_item_name(short item, Str255 str);
-short window_populate(short mode, Handle h, short count);
-
-void window_activate(Boolean active);
-void window_grow(Point p);
-void window_resume(Boolean resume);
-void window_show(Boolean show);
-void window_text(unsigned char *str);
-void window_update(void);
-
-#endif /* __WINDOWH__ */
+#endif /* __LISTH__ */
