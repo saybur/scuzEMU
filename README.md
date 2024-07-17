@@ -15,7 +15,11 @@ Compatibility
 
 Minimum firmware versions tested to work with this application:
 
-* ZuluSCSI 2024.05.17 (recommend using nightly release for CD-ROM switching)
+* ZuluSCSI 2024.07.16
+    * In `zuluscsi.ini` under the `[SCSI]` section, requires `EnableToolbox=1`.
+* scuznet
+    * Only file downloads from the `shared` directory are supported.
+    * Requires firmware built after 2024-07-16 with `-DUSE_TOOLBOX` set.
 
 If you find this works with an emulator, or if you have changes you would like
 to contribute, please contact @saybur via 68kmla.org or let me know on Github.
