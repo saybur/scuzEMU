@@ -19,7 +19,9 @@
 
 void list_clear_selections(ListHandle list);
 pascal short list_cmp(char *cell, char *test, short cl, short tl);
+void list_draw_grow(WindowPtr window, ListHandle list);
 void list_key(ListHandle list, EventRecord *evt);
 void list_next(ListHandle list, short *i);
+void list_size(ListHandle list, short w, short h);
 
 #endif /* __LISTH__ */

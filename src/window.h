@@ -23,7 +23,7 @@ void window_click(EventRecord *evt, Boolean *dclick);
 void window_key(EventRecord *evt);
 void window_next(short *i);
 void window_get_item_name(short item, Str255 str);
-short window_populate(short mode, Handle h, short count);
+short window_populate(short scsi, short mode, Handle h, short count);
 
 void window_activate(Boolean active);
 void window_grow(Point p);

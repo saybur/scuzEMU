@@ -26,7 +26,6 @@
 #define WAIT_EVENT_SLEEP    30
 #define SCSI_TIMEOUT        300
 #define WINDOW_MIN_HEIGHT   200
-#define WINDOW_MIN_WIDTH    240
 
 /* This is more than what is actually allowed (100), here for possible future changes */
 #define MAXIMUM_FILES       255
@@ -53,6 +52,11 @@
 
 #define DLOG_OPEN           512
 
+#define ICON_EMU            128
+#define ICON_DEVICE         129
+#define ICON_FILES          130
+#define ICON_IMAGES         131
+
 #define MENU_APPLE          128
 #define MENU_FILE           129
 #define MENU_EDIT           130
@@ -78,6 +82,9 @@
 #define STRI_GEN_PROG_DOWN  4
 #define STRI_GEN_PROG_UP    5
 #define STRI_GEN_PROG_FILE  6
+#define STRI_GEN_HEAD_DEV   7
+#define STRI_GEN_HEAD_FILE  8
+#define STRI_GEN_HEAD_IMG   9
 
 #define STRI_GA_NSF         1
 #define STRI_GA_NSI         2

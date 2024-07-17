@@ -21,10 +21,41 @@
 #include "window.h"
 #include "util.h"
 
+#define WINDOW_WIDTH        261
+#define WINDOW_HEADER       46
+
 static WindowPtr window;
 static ListHandle list;
-static Str31 text;
+static Handle icon_device, icon_files, icon_images;
+static Str31 note;
+static Str15 str_device, str_files, str_images;
 static short content_type;
+
+/**
+ * Draws the window reminder/note text.
+ *
+ * @param erase  if true, erase the text area prior to drawing.
+ */
+static void window_draw_note(Boolean erase)
+{
+	Rect bounds;
+
+	bounds = window->portRect;
+	SetRect(&bounds,
+			bounds.left + 10,
+			bounds.top + 32,
+			bounds.left + (WINDOW_WIDTH - 70),
+			bounds.top + 44);
+
+	if (erase) {
+		EraseRect(&bounds);
+	}
+
+	MoveTo(bounds.left + 2, bounds.bottom - 2);
+	TextSize(10);
+	DrawString(note);
+	TextSize(0);
+}
 
 /**
  * Draws the window.
@@ -36,22 +67,48 @@ static short content_type;
 static void window_draw(void)
 {
 	GrafPtr old_port;
-	Rect bounds;
+	Rect r;
 
 	GetPort(&old_port);
 	SetPort(window);
 
 	EraseRect(&(window->portRect));
 
+	MoveTo(0, WINDOW_HEADER - 1);
+	LineTo(WINDOW_WIDTH, WINDOW_HEADER - 1);
+
+	if (icon_device) {
+		SetRect(&r, 10, 10, 26, 26);
+		PlotIcon(&r, icon_device);
+	}
+
+	MoveTo(36, 22);
+	TextFont(0);
+	TextSize(12);
+	DrawString(str_device);
+
+	MoveTo(156, 22);
+	if (content_type) {
+		if (icon_images) {
+			SetRect(&r, 130, 10, 146, 26);
+			PlotIcon(&r, icon_images);
+		}
+		DrawString(str_images);
+	} else {
+		if (icon_files) {
+			SetRect(&r, 130, 10, 146, 26);
+			PlotIcon(&r, icon_files);
+		}
+		DrawString(str_files);
+	}
+	TextFont(1);
+	TextSize(0);
+
+	window_draw_note(false);
+
 	UpdateControls(window, window->visRgn);
 	LUpdate(window->visRgn, list);
-	DrawGrowIcon(window);
-
-	bounds = window->portRect;
-	MoveTo(bounds.left + 3, bounds.bottom - 3);
-	TextSize(10);
-	DrawString(text);
-	TextSize(0);
+	list_draw_grow(window, list);
 
 	SetPort(old_port);
 }
@@ -85,13 +142,23 @@ Boolean window_init(void)
 	SetPort(window);
 
 	list_vis = window->portRect;
+	list_vis.top = list_vis.top + WINDOW_HEADER;
+	list_vis.left = list_vis.left;
 	list_vis.right = list_vis.right - 15;
-	list_vis.bottom = list_vis.bottom - 15;
 
 	SetRect(&list_con, 0, 0, 1, 0);
 	SetPt(&list_cell, 0, 0);
 
 	list = LNew(&list_vis, &list_con, list_cell, 0, window, true, true, false, true);
+	list_size(list, -1, -1);
+
+	icon_device = GetIcon(ICON_DEVICE);
+	icon_files = GetIcon(ICON_FILES);
+	icon_images = GetIcon(ICON_IMAGES);
+
+	str_load(STR_GENERAL, STRI_GEN_HEAD_DEV, str_device, 16);
+	str_load(STR_GENERAL, STRI_GEN_HEAD_FILE, str_files, 16);
+	str_load(STR_GENERAL, STRI_GEN_HEAD_IMG, str_images, 16);
 
 	content_type = -1;
 	return true;
@@ -107,7 +174,7 @@ void window_activate(Boolean active)
 	SetPort(window);
 
 	LActivate(active, list);
-	DrawGrowIcon(window);
+	list_draw_grow(window, list);
 }
 
 /**
@@ -174,13 +241,13 @@ void window_grow(Point p)
 	SetPort(window);
 
 	limits = (*GetGrayRgn())->rgnBBox;
-	limits.left = WINDOW_MIN_WIDTH;
+	limits.left = WINDOW_WIDTH;
+	limits.right = WINDOW_WIDTH;
 	limits.top = WINDOW_MIN_HEIGHT;
 
 	if (nsize = GrowWindow(window, p, &limits)) {
 		SizeWindow(window, LoWord(nsize), HiWord(nsize), true);
-		LSize(LoWord(nsize) - 15, HiWord(nsize) - 15, list);
-		EraseRect(&(window->portRect));
+		list_size(list, LoWord(nsize), HiWord(nsize) - WINDOW_HEADER);
 		InvalRect(&(window->portRect));
 	}
 
@@ -208,14 +275,21 @@ void window_next(short *i)
  * The mode below defines how the window is drawn for the contents, where 0 is files, 1 is
  * images, and everything else is "no content."
  *
+ * @param scsi  the SCSI ID being assigned, on [0, 6]
  * @param mode  the kind of data being assigned, per above.
  * @param h     block of data to parse in emu_populate_list().
  * @param len   length of above data.
  * @return      the number of entries found in the list.
  */
-short window_populate(short mode, Handle h, short len)
+short window_populate(short scsi, short mode, Handle h, short len)
 {
 	short num;
+
+	if (scsi < 0) scsi = 0;
+	if (scsi > 6) scsi = 6;
+	if (str_device[0] > 0) {
+		str_device[str_device[0]] = '0' + scsi;
+	}
 
 	num = emu_populate_list(list, h, len);
 	content_type = mode;
@@ -260,7 +334,7 @@ void window_show(Boolean open)
 }
 
 /**
- * Updates the informational text at the bottom of the window.
+ * Updates the informational text note at the top of the window.
  *
  * Needs a Pascal-style string. This will set the UI to match. If the provided
  * pointer is NIL it will set the text to default.
@@ -277,33 +351,20 @@ void window_text(unsigned char *str)
 		/* copy string to local; don't forget length in Pascal string */
 		len = (unsigned char) str[0];
 		if (len > 31) len = 31;
-		BlockMove(str, text, len + 1);
+		BlockMove(str, note, len + 1);
 	} else {
 		/* use default */
 		if (content_type) {
-			str_load(STR_GENERAL, STRI_GEN_IMAGES, text, 32);
+			str_load(STR_GENERAL, STRI_GEN_IMAGES, note, 32);
 		} else {
-			str_load(STR_GENERAL, STRI_GEN_FILES, text, 32);
+			str_load(STR_GENERAL, STRI_GEN_FILES, note, 32);
 		}
 	}
 
 	GetPort(&old_port);
 	SetPort(window);
 
-	/* clear text already present in UI */
-	bounds = window->portRect;
-	SetRect(&bounds,
-			bounds.left + 1,
-			bounds.bottom - 14,
-			bounds.left + (WINDOW_MIN_WIDTH - 22),
-			bounds.bottom - 1);
-	EraseRect(&bounds);
-
-	/* draw the new text */
-	MoveTo(bounds.left + 2, bounds.bottom - 2);
-	TextSize(10);
-	DrawString(text);
-	TextSize(0);
+	window_draw_note(true);
 
 	SetPort(old_port);
 }

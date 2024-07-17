@@ -79,6 +79,34 @@ pascal short list_cmp(char *cell, char *test, short cl, short tl)
 }
 
 /**
+ * Draws the grow icon for lists where the horizontal scroll bar area is used
+ * to render content. The GrafPtr must be set prior to invoking this.
+ *
+ * This approach is intended for vertical lists sized via list_size(). If you
+ * are not using that approach, just call DrawGrowIcon normally.
+ *
+ * @param window  the window to draw in, which must be the active GrafPtr.
+ * @param list    the list to draw.
+ */
+void list_draw_grow(WindowPtr window, ListHandle list)
+{
+	Rect bounds;
+	RgnHandle srgn;
+
+	srgn = NewRgn();
+	GetClip(srgn);
+
+	bounds = (**list).rView;
+	bounds.left = bounds.right;
+	bounds.right = bounds.right + 15;
+	ClipRect(&bounds);
+	DrawGrowIcon(window);
+
+	SetClip(srgn);
+	DisposeRgn(srgn);
+}
+
+/**
  * Handles /inContent/ on /keyDown/ for a vertical list. Main functions:
  *
  * 1) Standard keystrokes will search the list for the first partial match and
@@ -209,5 +237,18 @@ void list_next(ListHandle list, short *i)
 		*i = p.v;
 	} else {
 		*i = -1;
+	}
+}
+
+void list_size(ListHandle list, short w, short h)
+{
+	Rect r;
+
+	if (w < 0 || h < 0) {
+		r = (**list).rView;
+		SizeControl((**list).vScroll, 16, (r.bottom - r.top - 13));
+	} else {
+		LSize(w - 15, h, list);
+		SizeControl((**list).vScroll, 16, h - 13);
 	}
 }

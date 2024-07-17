@@ -74,8 +74,9 @@ static void do_list_update(void)
 		if (length <= 0) {
 			count = 0;
 			/* handle never allocated, do not discard */
+			window_populate(scsi_id, open_type, 0, 0);
 		} else {
-			count = window_populate(open_type, h, length);
+			count = window_populate(scsi_id, open_type, h, length);
 			DisposHandle(h);
 		}
 
@@ -84,6 +85,7 @@ static void do_list_update(void)
 			/* images */
 			if (count <= 0) {
 				/* probably not a valid device */
+				window_show(false);
 				NumToString(scsi_id, ns);
 				ParamText(ns, 0, 0, 0);
 				NoteAlert(ALRT_NO_IMAGES, 0);

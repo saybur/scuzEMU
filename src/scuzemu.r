@@ -239,10 +239,43 @@ data 'ICON' (128) {
 	$"0ADC CC10 1293 B808 22BF 6004 23E4 E004"            /* ..Ã..ì∏."ø`.#... */
 	$"424C 3C02 4612 4602 8821 8201 8840 8201"            /* BL<.F.F.à!Ç.à@Ç. */
 	$"9040 B201 9046 B201 9046 C401 9021 3BC1"            /* ê@≤.êF≤.êFƒ.ê!;¡ */
-	$"903E 0021 9000 0011 9000 C009 901C 38C5"            /* ê>.!ê...ê.¿Δê.8≈ */
-	$"8826 260D 8821 11C5 4410 883A 4210 6402"            /* à&&¬à!.≈D.à:B.d. */
-	$"2208 1404 2184 0804 1082 0008 0841 0010"            /* "...!Ñ...Ç...A.. */
+	$"901E 0021 9000 0011 9000 C009 901C 38C5"            /* ê..!ê...ê.¿Δê.8≈ */
+	$"8826 260D 8821 11C5 4410 883A 4210 4402"            /* à&&¬à!.≈D.à:B.D. */
+	$"2208 2404 2104 1804 1082 0008 0841 0010"            /* ".$.!....Ç...A.. */
 	$"0440 8020 0320 40C0 00E0 4300 003F FC00"            /* .@Ä . @¿..C..?.. */
+};
+
+data 'ICON' (129) {
+	$"0003 0000 0003 0000 000F C000 000F C000"            /* ..........¿...¿. */
+	$"003C F000 003C F000 00F0 3C00 00F0 3C00"            /* .<...<....<...<. */
+	$"03C0 0F00 03C0 0F00 0F0F C3C0 0F0F C3C0"            /* .¿...¿....√¿..√¿ */
+	$"3C30 0000 3C30 0000 F03F CFFC F03F CFFC"            /* <0..<0...?œ..?œ. */
+	$"3C30 0000 3C30 0000 0F0F C3C0 0F0F C3C0"            /* <0..<0....√¿..√¿ */
+	$"03C0 0F00 03C0 0F00 00F0 3C00 00F0 3C00"            /* .¿...¿....<...<. */
+	$"003C F000 003C F000 000F C000 000F C000"            /* .<...<....¿...¿. */
+	$"0003 0000 0003 0000 0000 0000 0000 0000"            /* ................ */
+};
+
+data 'ICON' (130) {
+	$"FFFF 0000 FFFF 0000 C000 C000 C000 C000"            /* ........¿.¿.¿.¿. */
+	$"CFC0 3000 CFC0 3000 C000 3FF0 C000 3FF0"            /* œ¿0.œ¿0.¿.?.¿.?. */
+	$"CFFC 300C CFFC 300C C000 3CC3 C000 3CC3"            /* œ.0.œ.0.¿.<√¿.<√ */
+	$"CFFF 3333 CFFF 3333 C000 3CC3 C000 3CC3"            /* œ.33œ.33¿.<√¿.<√ */
+	$"CFFF 3333 CFFF 3333 C000 3CC3 C000 3CC3"            /* œ.33œ.33¿.<√¿.<√ */
+	$"CFFF 3333 CFFF 3333 C000 3CC3 C000 3CC3"            /* œ.33œ.33¿.<√¿.<√ */
+	$"FFFF F333 FFFF F333 000C CCC3 000C CCC3"            /* ...3...3..Ã√..Ã√ */
+	$"000C 0003 000C 0003 000F FFFF 000F FFFF"            /* ................ */
+};
+
+data 'ICON' (131) {
+	$"03FF C000 03FF C000 0C00 3000 0C00 3000"            /* ..¿...¿...0...0. */
+	$"30C0 0C00 30C0 0C00 C300 0300 C300 0300"            /* 0¿..0¿..√...√... */
+	$"CC3C 0300 CC3C 0300 C0C3 0300 C0C3 0300"            /* Ã<..Ã<..¿√..¿√.. */
+	$"C0C3 03FC C0C3 03FC C03C 3333 C03C 3333"            /* ¿√..¿√..¿<33¿<33 */
+	$"C000 C333 C000 C333 3003 0C33 3003 0C33"            /* ¿.√3¿.√30..30..3 */
+	$"0C00 3FC3 0C00 3FC3 03FF C003 03FF C003"            /* ..?√..?√..¿...¿. */
+	$"000C 0003 000C 0003 000C 3FC3 000C 3FC3"            /* ..........?√..?√ */
+	$"000C 0003 000C 0003 0003 FFFC 0003 FFFC"            /* ................ */
 };
 
 data 'DLOG' (512, "Choose ID") {
@@ -371,7 +404,7 @@ data 'STR#' (259, "File Errors") {
 };
 
 data 'STR#' (128, "Window") {
-	$"0006 2044 6F75 626C 652D 636C 6963 6B20"            /* .. Double-click  */
+	$"0009 2044 6F75 626C 652D 636C 6963 6B20"            /* .Δ Double-click  */
 	$"6120 6669 6C65 2074 6F20 646F 776E 6C6F"            /* a file to downlo */
 	$"6164 2E1F 446F 7562 6C65 2D63 6C69 636B"            /* ad..Double-click */
 	$"2061 6E20 696D 6167 6520 746F 206D 6F75"            /*  an image to mou */
@@ -380,6 +413,9 @@ data 'STR#' (128, "Window") {
 	$"6E67 2074 6F20 646F 776E 6C6F 6164 3A1A"            /* ng to download:. */
 	$"4974 656D 7320 7265 6D61 696E 696E 6720"            /* Items remaining  */
 	$"746F 2075 706C 6F61 643A 0546 696C 653A"            /* to upload:.File: */
+	$"0C44 6576 6963 653A 2049 4420 580B 4D6F"            /* .Device: ID X.Mo */
+	$"6465 3A20 4669 6C65 730C 4D6F 6465 3A20"            /* de: Files.Mode:  */
+	$"496D 6167 6573"                                     /* Images */
 };
 
 data 'STR#' (256, "Generic Alerts") {
@@ -440,14 +476,14 @@ data 'STR#' (256, "Generic Alerts") {
 };
 
 data 'ICN#' (128) {
-	$"003F FC00 00C0 0300 0330 10C0 0666 6220"            /* .?...¿...0.¿.fb  */
+	$"003F FC00 00C0 0300 0330 10C0 0466 6220"            /* .?...¿...0.¿.fb  */
 	$"0ADC CC10 1293 B808 22BF 6004 23E4 E004"            /* ..Ã..ì∏."ø`.#... */
-	$"424C 3C02 4612 4602 8C21 8201 9840 8201"            /* BL<.F.F.å!Ç.ò@Ç. */
+	$"424C 3C02 4612 4602 8821 8201 8840 8201"            /* BL<.F.F.à!Ç.à@Ç. */
 	$"9040 B201 9046 B201 9046 C401 9021 3BC1"            /* ê@≤.êF≤.êFƒ.ê!;¡ */
-	$"903E 0021 9000 0011 9000 C009 901C 38C5"            /* ê>.!ê...ê.¿Δê.8≈ */
-	$"9826 260D 8823 11C5 4C11 883E 4618 E402"            /* ò&&¬à#.≈L.à>F... */
-	$"2208 3404 2384 1804 1183 0008 08C0 8010"            /* ".4.#Ñ...É...¿Ä. */
-	$"0440 8020 0360 40C0 00E0 4300 003F FC00"            /* .@Ä .`@¿..C..?.. */
+	$"901E 0021 9000 0011 9000 C009 901C 38C5"            /* ê..!ê...ê.¿Δê.8≈ */
+	$"8826 260D 8821 11C5 4410 883A 4210 4402"            /* à&&¬à!.≈D.à:B.D. */
+	$"2208 2404 2104 1804 1082 0008 0841 0010"            /* ".$.!....Ç...A.. */
+	$"0440 8020 0320 40C0 00E0 4300 003F FC00"            /* .@Ä . @¿..C..?.. */
 	$"003F FC00 00FF FF00 03FF FFC0 07FF FFE0"            /* .?.........¿.... */
 	$"0FFF FFF0 1FFF FFF8 3FFF FFFC 3FFF FFFC"            /* ........?...?... */
 	$"7FFF FFFE 7FFF FFFE FFFF FFFF FFFF FFFF"            /* ................ */
@@ -458,143 +494,76 @@ data 'ICN#' (128) {
 	$"07FF FFE0 03FF FFC0 00FF FF00 003F FC00"            /* .......¿.....?.. */
 };
 
-data 'icl8' (128) {
-	$"0000 0000 0000 0000 0000 FFFF FFFF FFFF"            /* ................ */
-	$"FFFF FFFF FFFF 0000 0000 0000 0000 0000"            /* ................ */
-	$"0000 0000 0000 0000 FFFF 7F7F 7F7F 7F7F"            /* ................ */
-	$"7F7F 7F7F 7F7F FFFF 0000 0000 0000 0000"            /* ................ */
-	$"0000 0000 0000 FFFF 7F7F FFFF 7F7F 7F7F"            /* ................ */
-	$"7F7F 7FFF 7F7F 7F7F FFFF 0000 0000 0000"            /* ................ */
-	$"0000 0000 00FF FF7F 7FFF FF7F 7FFF FF7F"            /* ................ */
-	$"7FFF FF7F 7F7F FF7F 7F7F FF00 0000 0000"            /* ................ */
-	$"0000 0000 FF7F FF7F FFFF 7FFF FFFF 7F7F"            /* ................ */
-	$"FFFF 7F7F FFFF 7F7F 7F7F 7FFF 0000 0000"            /* ................ */
-	$"0000 00FF 7F7F FF7F FF7F 7FFF 7F7F FFFF"            /* ................ */
-	$"FF54 FFFF FF7F 7F7F 7F7F 7F7F FF00 0000"            /* .T.............. */
-	$"0000 FF7F 7F7F FF7F FF7F FFFF FFFF FFFF"            /* ................ */
-	$"54FF FF7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000"            /* T............... */
-	$"0000 FF7F 7F7F FFFF FFFF FFFA FBFF FBFB"            /* ................ */
-	$"FFFF FF7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
-	$"00FF 7F7F 7F7F FFFB FBFF FBFB FFFF FBFB"            /* ................ */
-	$"FBFB FFFF FFFF 7F7F 7F7F 7F7F 7F7F FF00"            /* ................ */
-	$"00FF 7F7F 7FFF FFFB FCFB FBFF 1616 FFFB"            /* ................ */
-	$"FBFF 1616 16FF FF7F 7F7F 7F7F 7F7F FF00"            /* ................ */
-	$"FF7F 7F7F FFFF FBFB FBFB FF16 1616 16FF"            /* ................ */
-	$"FF16 1616 1616 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ................ */
-	$"FF7F 7FFF FFFB FBFB FCFF 1616 1616 1616"            /* ................ */
-	$"FF16 D8D8 D816 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ..ÿÿÿ........... */
-	$"FF7F 7FFF FBFB FBFB FBFF 1616 D8D8 D816"            /* ............ÿÿÿ. */
-	$"FF16 FFFF D816 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ....ÿ........... */
-	$"FF7F 7FFF FBFB FBFB FBFF 1616 D8FF FF16"            /* ............ÿ... */
-	$"FF16 FFFF D816 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ....ÿ........... */
-	$"FF7F 7FFF FBFB FBFB FBFF 1616 D8FF FF16"            /* ............ÿ... */
-	$"FFFF 1616 16FF 7F7F 7F7F 7F7F 7F7F 7FFF"            /* ................ */
-	$"FF7F 7FFF FCFB FBFB FBFB FF16 1616 16FF"            /* ................ */
-	$"F8F8 FFFF FFF8 FFFF FFFF 7F7F 7F7F 7FFF"            /* ................ */
-	$"FF7F 7FFF FBFB FBFB FBFB FFFF FFFF FFF8"            /* ................ */
-	$"F8F8 F8F8 F8F8 F8F9 F8F8 FF7F 7F7F 7FFF"            /* ................ */
-	$"FF7F 7FFF FBFB FBFB FBFB FBF8 F8F8 F8F8"            /* ................ */
-	$"F8F8 F8F8 F8F8 F8F8 F8F8 F9FF 7F7F 7FFF"            /* ................ */
-	$"FF7F 7FFF FBFB FBFB FBFB FBFB F8F8 F8F8"            /* ................ */
-	$"FFFF F8F8 F8F8 F8F8 F8F8 F8F8 FF7F 7FFF"            /* ................ */
-	$"FF7F 7FFF FBFB FBFB FBFB FBFF FFFF F9F8"            /* ................ */
-	$"F8F8 FFFF FFF9 F8F8 FFFF F8F8 F8FF 7FFF"            /* ................ */
-	$"FF7F 7FFF FFFB FBFB FBFB FF7F 7FFF FFF9"            /* ................ */
-	$"F8F8 FF7F 7FFF FFF9 F8F8 F8F8 FFFF 7FFF"            /* ................ */
-	$"FF7F 7F7F FFFB FBFB FBFB FF7F 7F7F FFFF"            /* ................ */
-	$"F8F8 F8FF 7F7F 7FFF FFFF F8F8 F8FF 7FFF"            /* ................ */
-	$"00FF 7F7F FFFF FBFB FBFB FBFF 7F7F 7FFF"            /* ................ */
-	$"FFF8 F8F8 FF7F 7F7F 7F7F FFFF FFFF FF00"            /* ................ */
-	$"00FF 7F7F 7FFF FFFB FBFB FBFF FF7F 7F7F"            /* ................ */
-	$"FFFF FFF8 F8FF 7F7F 7F7F 7F7F 7F7F FF00"            /* ................ */
-	$"0000 FF7F 7F7F FFFB FBFB FBFB FF7F 7F7F"            /* ................ */
-	$"7F7F FFFF F8FF 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
-	$"0000 FF7F 7F7F FFFF FFFB FBFB FBFF 7F7F"            /* ................ */
-	$"7F7F 7FFF FF7F 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
-	$"0000 00FF 7F7F 7FFF FFFB FBFB FBFB FFFF"            /* ................ */
-	$"7F7F 7F7F 7F7F 7F7F 7F7F 7F7F FF00 0000"            /* ................ */
-	$"0000 0000 FF7F 7F7F FFFF FBFB FBFB FBFB"            /* ................ */
-	$"FF7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000 0000"            /* ................ */
-	$"0000 0000 00FF 7F7F 7FFF FBFB FBFB FBFB"            /* ................ */
-	$"FF7F 7F7F 7F7F 7F7F 7F7F FF00 0000 0000"            /* ................ */
-	$"0000 0000 0000 FFFF 7FFF FFFB FBFB FBFB"            /* ................ */
-	$"FBFF 7F7F 7F7F 7F7F FFFF 0000 0000 0000"            /* ................ */
-	$"0000 0000 0000 0000 FFFF FFFB FBFB FBFB"            /* ................ */
-	$"FBFF 7F7F 7F7F FFFF 0000 0000 0000 0000"            /* ................ */
-	$"0000 0000 0000 0000 0000 FFFF FFFF FFFF"            /* ................ */
-	$"FFFF FFFF FFFF 0000 0000 0000 0000 0000"            /* ................ */
-};
-
 data 'icl4' (128) {
 	$"0000 0000 00FF FFFF FFFF FF00 0000 0000"            /* ................ */
-	$"0000 0000 FF77 7777 7777 77FF 0000 0000"            /* .....wwwwww..... */
-	$"0000 00FF 77FF 7777 777F 7777 FF00 0000"            /* ....w.www.ww.... */
-	$"0000 0FF7 7FF7 7FF7 7FF7 77F7 77F0 0000"            /* ..........w.w... */
-	$"0000 F7F7 FF7F FF77 FF77 FF77 777F 0000"            /* .......w.w.ww... */
-	$"000F 77F7 F77F 77FF F7FF F777 7777 F000"            /* ..w...w....www.. */
-	$"00F7 77F7 F7FF FFFF 7FF7 7777 7777 7F00"            /* ..w.......wwww.. */
-	$"00F7 77FF FFFD DFDD FFF7 7777 7777 7F00"            /* ..w.......wwww.. */
-	$"0F77 77FD DFDD FFDD DDFF FF77 7777 77F0"            /* .ww........wwww. */
-	$"0F77 7FFD DDDF 22FD DF22 2FF7 7777 77F0"            /* .w....".."/.www. */
-	$"F777 FFDD DDF2 222F F222 22F7 7777 777F"            /* .w...."/."".www. */
-	$"F77F FDDD DF22 2222 F233 32F7 7777 777F"            /* .....""".32.www. */
-	$"F77F DDDD DF22 3332 F2FF 32F7 7777 777F"            /* ....."32..2.www. */
-	$"F77F DDDD DF22 3FF2 F2FF 32F7 7777 777F"            /* ....."?...2.www. */
-	$"F77F DDDD DF22 3FF2 FF22 2F77 7777 777F"            /* ....."?.."/wwww. */
-	$"F77F DDDD DDF2 222F CCFF FCFF FF77 777F"            /* ......"/Ã....ww. */
-	$"F77F DDDD DDFF FFFC CCCC CCCC CCF7 777F"            /* ........ÃÃÃÃÃ.w. */
-	$"F77F DDDD DDDC CCCC CCCC CCCC CCCF 777F"            /* ......ÃÃÃÃÃÃÃœw. */
-	$"F77F DDDD DDDD CCCC FFCC CCCC CCCC F77F"            /* ......ÃÃ.ÃÃÃÃÃ.. */
-	$"F77F DDDD DDDF FFCC CCFF FCCC FFCC CF7F"            /* .......ÃÃ..Ã.Ãœ. */
-	$"F77F FDDD DDF7 7FFC CCF7 7FFC CCCC FF7F"            /* ........Ã...ÃÃ.. */
-	$"F777 FDDD DDF7 77FF CCCF 777F FFCC CF7F"            /* .w....w.Ãœw..Ãœ. */
-	$"0F77 FFDD DDDF 777F FCCC F777 77FF FFF0"            /* .w....w..Ã.ww... */
-	$"0F77 7FFD DDDF F777 FFFC CF77 7777 77F0"            /* .w.....w..œwwww. */
-	$"00F7 77FD DDDD F777 77FF CF77 7777 7F00"            /* ..w....ww.œwww.. */
-	$"00F7 77FF FDDD DF77 777F F777 7777 7F00"            /* ..w....ww..www.. */
-	$"000F 777F FDDD DDFF 7777 7777 7777 F000"            /* ..w.....wwwwww.. */
-	$"0000 F777 FFDD DDDD F777 7777 777F 0000"            /* ...w.....wwww... */
-	$"0000 0F77 7FDD DDDD F777 7777 77F0 0000"            /* ...w.....wwww... */
-	$"0000 00FF 7FFD DDDD DF77 7777 FF00 0000"            /* .........www.... */
-	$"0000 0000 FFFD DDDD DF77 77FF 0000 0000"            /* .........ww..... */
+	$"0000 0000 FFDD DDDD DDDD DDFF 0000 0000"            /* ................ */
+	$"0000 00FF DDFF DDDD DDDF DDDD FF00 0000"            /* ................ */
+	$"0000 0FFD DFFD DFFD DFFD DDFD DDF0 0000"            /* ................ */
+	$"0000 FDFD FFDF FFDD FFDD FFDD DDDF 0000"            /* ................ */
+	$"000F DDFD FDDF DDFF FDFF FDDD DDDD F000"            /* ................ */
+	$"00FD DDFD FDFF FFFF DFFD DDDD DDDD DF00"            /* ................ */
+	$"00FD DDFF FFFE EFEE FFFD DDDD DDDD DF00"            /* ................ */
+	$"0FDD DDFE EFEE FFEE EEFF FFDD DDDD DDF0"            /* ................ */
+	$"0FDD DFFE EEEF 22FE EF22 2FFD DDDD DDF0"            /* ......".."/..... */
+	$"FDDD FEEE EEF2 222F F222 22FD DDDD DDDF"            /* ......"/.""..... */
+	$"FDDD FEEE EF22 2222 F233 32FD DDDD DDDF"            /* .....""".32..... */
+	$"FDDF EEEE EF22 3332 F2FF 32FD DDDD DDDF"            /* ....."32..2..... */
+	$"FDDF EEEE EF22 3FF2 F2FF 32FD DDDD DDDF"            /* ....."?...2..... */
+	$"FDDF EEEE EF22 3FF2 FF22 2FDD DDDD DDDF"            /* ....."?.."/..... */
+	$"FDDF EEEE EEF2 222F CCFF FCFF FFDD DDDF"            /* ......"/Ã....... */
+	$"FDDF EEEE EEEF FFFC CCCC CCCC CCFD DDDF"            /* ........ÃÃÃÃÃ... */
+	$"FDDF EEEE EEEC CCCC CCCC CCCC CCCF DDDF"            /* ......ÃÃÃÃÃÃÃœ.. */
+	$"FDDF EEEE EEEE CCCC FFCC CCCC CCCC FDDF"            /* ......ÃÃ.ÃÃÃÃÃ.. */
+	$"FDDF EEEE EEEF FFCC CCFF FCCC FFCC CFDF"            /* .......ÃÃ..Ã.Ãœ. */
+	$"FDDD FEEE EEFD DFFC CCFD DFFC CCCC FFDF"            /* ........Ã...ÃÃ.. */
+	$"FDDD FEEE EEFD DDDF CCCF DDDF FFCC CFDF"            /* ........Ãœ...Ãœ. */
+	$"0FDD DFEE EEEF DDDD FCCC FDDD DDFF FDF0"            /* .........Ã...... */
+	$"0FDD DDFE EEEF DDDD DFCC CFDD DDDD DDF0"            /* .........Ãœ..... */
+	$"00FD DDFE EEEE FDDD DDFC CFDD DDDD DF00"            /* ..........œ..... */
+	$"00FD DDDF EEEE EFDD DDDF FDDD DDDD DF00"            /* ................ */
+	$"000F DDDD FEEE EEFD DDDD DDDD DDDD F000"            /* ................ */
+	$"0000 FDDD DFEE EEEF DDDD DDDD DDDF 0000"            /* ................ */
+	$"0000 0FDD DFEE EEEE FDDD DDDD DDF0 0000"            /* ................ */
+	$"0000 00FF DDFE EEEE EFDD DDDD FF00 0000"            /* ................ */
+	$"0000 0000 FFFE EEEE EFDD DDFF 0000 0000"            /* ................ */
 	$"0000 0000 00FF FFFF FFFF FF00 0000 0000"            /* ................ */
 };
 
 data 'ics#' (128) {
-	$"1FF8 2004 4002 8001 9E7D B3C7 E183 C083"            /* .. .@.Ä.û}≥«.É¿É */
-	$"C0B3 C6B3 C6C7 E1FD BF01 4002 2004 1FF8"            /* ¿≥Δ≥Δ«..ø.@. ... */
+	$"1FF8 2004 4002 8001 8C39 9245 A183 C083"            /* .. .@.Ä.å9íE°É¿É */
+	$"C0B3 C6B3 C6C5 A139 9E01 4002 2004 1FF8"            /* ¿≥Δ≥Δ≈°9û.@. ... */
 	$"1FF8 3FFC 7FFE FFFF FFFF FFFF FFFF FFFF"            /* ..?............. */
 	$"FFFF FFFF FFFF FFFF FFFF 7FFE 3FFC 1FF8"            /* ............?... */
 };
 
 data 'ics8' (128) {
 	$"0000 00FF FFFF FFFF FFFF FFFF FF00 0000"            /* ................ */
-	$"0000 FFAB ABAB ABAB ABAB ABAB ABFF 0000"            /* ...´´´´´´´´´´... */
-	$"00FF ABAB ABAB ABAB ABAB ABAB ABAB FF00"            /* ..´´´´´´´´´´´´.. */
-	$"FFAB ABAB ABAB ABAB ABAB ABAB ABAB ABFF"            /* .´´´´´´´´´´´´´´. */
-	$"FFAB ABFF FFFF FFAB ABFF FFFF FFFF ABFF"            /* .´´....´´.....´. */
-	$"FFAB FFFF 1616 FFFF FFFF 1616 16FF FFFF"            /* .´.............. */
-	$"FFFF FF16 1616 16FF FF16 1616 1616 FFFF"            /* ................ */
+	$"0000 FF7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
+	$"00FF 7F7F 7F7F 7F7F 7F7F 7F7F 7F7F FF00"            /* ................ */
+	$"FF7F 7F7F 7F7F 7F7F 7F7F 7F7F 7F7F 7FFF"            /* ................ */
+	$"FF7F 7F7F FFFF 7F7F 7F7F FFFF FF7F 7FFF"            /* ................ */
+	$"FF7F 7FFF 1616 FF7F 7FFF 1616 16FF 7FFF"            /* ................ */
+	$"FF7F FF16 1616 16FF FF16 1616 1616 FFFF"            /* ................ */
 	$"FFFF 1616 1616 1616 FF16 D8D8 D816 FFFF"            /* ..........ÿÿÿ... */
 	$"FFFF 1616 D8D8 D816 FF16 FFFF D816 FFFF"            /* ....ÿÿÿ.....ÿ... */
 	$"FFFF 1616 D8FF FF16 FF16 FFFF D816 FFFF"            /* ....ÿ.......ÿ... */
-	$"FFFF 1616 D8FF FF16 FFFF 1616 16FF FFFF"            /* ....ÿ........... */
-	$"FFFF FF16 1616 16FF FFFF FFFF FFFF ABFF"            /* ..............´. */
-	$"FFAB FFFF FFFF FFFF ABAB ABAB ABAB ABFF"            /* .´......´´´´´´´. */
-	$"00FF ABAB ABAB ABAB ABAB ABAB ABAB FF00"            /* ..´´´´´´´´´´´´.. */
-	$"0000 FFAB ABAB ABAB ABAB ABAB ABFF 0000"            /* ...´´´´´´´´´´... */
+	$"FFFF 1616 D8FF FF16 FFFF 1616 16FF 7FFF"            /* ....ÿ........... */
+	$"FF7F FF16 1616 16FF 7F7F FFFF FF7F 7FFF"            /* ................ */
+	$"FF7F 7FFF FFFF FF7F 7F7F 7F7F 7F7F 7FFF"            /* ................ */
+	$"00FF 7F7F 7F7F 7F7F 7F7F 7F7F 7F7F FF00"            /* ................ */
+	$"0000 FF7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
 	$"0000 00FF FFFF FFFF FFFF FFFF FF00 0000"            /* ................ */
 };
 
 data 'ics4' (128) {
-	$"000F FFFF FFFF F000 00F7 7777 7777 7F00"            /* ..........wwww.. */
-	$"0F77 7777 7777 77F0 F777 7777 7777 777F"            /* .wwwwww..wwwwww. */
-	$"F77F FFF7 7FFF FF7F F7FF 22FF FF22 2FFF"            /* ..........".."/. */
-	$"FFF2 222F F222 22FF FF22 2222 F233 32FF"            /* .."/.""..""".32. */
+	$"000F FFFF FFFF F000 00FD DDDD DDDD DF00"            /* ................ */
+	$"0FDD DDDD DDDD DDF0 FDDD DDDD DDDD DDDF"            /* ................ */
+	$"FDDD FFDD DDFF FDDF FDDF 22FD DF22 2FDF"            /* ..........".."/. */
+	$"FDF2 222F F222 22FF FF22 2222 F233 32FF"            /* .."/.""..""".32. */
 	$"FF22 3332 F2FF 32FF FF22 3FF2 F2FF 32FF"            /* ."32..2.."?...2. */
-	$"FF22 3FF2 FF22 2FFF FFF2 222F FFFF FF7F"            /* ."?.."/..."/.... */
-	$"FEFF FFFF 7777 777F 0F77 7777 7777 77F0"            /* ....www..wwwwww. */
-	$"00F7 7777 7777 7F00 000F FFFF FFFF F000"            /* ..wwww.......... */
+	$"FF22 3FF2 FF22 2FDF FDF2 222F DDFF FDDF"            /* ."?.."/..."/.... */
+	$"FDDF FFFD DDDD DDDF 0FDD DDDD DDDD DDF0"            /* ................ */
+	$"00FD DDDD DDDD DF00 000F FFFF FFFF F000"            /* ................ */
 };
 
 data 'BNDL' (128) {
@@ -621,5 +590,72 @@ data 'wctb' (128, "Main") {
 
 data 'wctb' (129, "Progress") {
 	$"0000 0000 0000 FFFF"                                /* ........ */
+};
+
+data 'icl8' (128) {
+	$"0000 0000 0000 0000 0000 FFFF FFFF FFFF"            /* ................ */
+	$"FFFF FFFF FFFF 0000 0000 0000 0000 0000"            /* ................ */
+	$"0000 0000 0000 0000 FFFF 7F7F 7F7F 7F7F"            /* ................ */
+	$"7F7F 7F7F 7F7F FFFF 0000 0000 0000 0000"            /* ................ */
+	$"0000 0000 0000 FFFF 7F7F FFFF 7F7F 7F7F"            /* ................ */
+	$"7F7F 7FFF 7F7F 7F7F FFFF 0000 0000 0000"            /* ................ */
+	$"0000 0000 00FF FF7F 7FFF FF7F 7FFF FF7F"            /* ................ */
+	$"7FFF FF7F 7F7F FF7F 7F7F FF00 0000 0000"            /* ................ */
+	$"0000 0000 FF7F FF7F FFFF 7FFF FFFF 7F7F"            /* ................ */
+	$"FFFF 7F7F FFFF 7F7F 7F7F 7FFF 0000 0000"            /* ................ */
+	$"0000 00FF 7F7F FF7F FF7F 7FFF 7F7F FFFF"            /* ................ */
+	$"FF7F FFFF FF7F 7F7F 7F7F 7F7F FF00 0000"            /* ................ */
+	$"0000 FF7F 7F7F FF7F FF7F FFFF FFFF FFFF"            /* ................ */
+	$"7FFF FF7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
+	$"0000 FF7F 7F7F FFFF FFFF FFFB FBFF FBFB"            /* ................ */
+	$"FFFF FF7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
+	$"00FF 7F7F 7F7F FFFB FBFF FBFB FFFF FBFB"            /* ................ */
+	$"FBFB FFFF FFFF 7F7F 7F7F 7F7F 7F7F FF00"            /* ................ */
+	$"00FF 7F7F 7FFF FFFB FBFB FBFF 1616 FFFB"            /* ................ */
+	$"FBFF 1616 16FF FF7F 7F7F 7F7F 7F7F FF00"            /* ................ */
+	$"FF7F 7F7F FFFB FBFB FBFB FF16 1616 16FF"            /* ................ */
+	$"FF16 1616 1616 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ................ */
+	$"FF7F 7F7F FFFB FBFB FBFF 1616 1616 1616"            /* ................ */
+	$"FF16 D8D8 D816 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ..ÿÿÿ........... */
+	$"FF7F 7FFF FBFB FBFB FBFF 1616 D8D8 D816"            /* ............ÿÿÿ. */
+	$"FF16 FFFF D816 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ....ÿ........... */
+	$"FF7F 7FFF FBFB FBFB FBFF 1616 D8FF FF16"            /* ............ÿ... */
+	$"FF16 FFFF D816 FF7F 7F7F 7F7F 7F7F 7FFF"            /* ....ÿ........... */
+	$"FF7F 7FFF FBFB FBFB FBFF 1616 D8FF FF16"            /* ............ÿ... */
+	$"FFFF 1616 16FF 7F7F 7F7F 7F7F 7F7F 7FFF"            /* ................ */
+	$"FF7F 7FFF FBFB FBFB FBFB FF16 1616 16FF"            /* ................ */
+	$"F8F8 FFFF FFF8 FFFF FFFF 7F7F 7F7F 7FFF"            /* ................ */
+	$"FF7F 7FFF FBFB FBFB FBFB FBFF FFFF FFF8"            /* ................ */
+	$"F8F8 F8F8 F8F8 F8F8 F8F8 FF7F 7F7F 7FFF"            /* ................ */
+	$"FF7F 7FFF FBFB FBFB FBFB FBF8 F8F8 F8F8"            /* ................ */
+	$"F8F8 F8F8 F8F8 F8F8 F8F8 F8FF 7F7F 7FFF"            /* ................ */
+	$"FF7F 7FFF FBFB FBFB FBFB FBFB F8F8 F8F8"            /* ................ */
+	$"FFFF F8F8 F8F8 F8F8 F8F8 F8F8 FF7F 7FFF"            /* ................ */
+	$"FF7F 7FFF FBFB FBFB FBFB FBFF FFFF F8F8"            /* ................ */
+	$"F8F8 FFFF FFF8 F8F8 FFFF F8F8 F8FF 7FFF"            /* ................ */
+	$"FF7F 7F7F FFFB FBFB FBFB FF7F 7FFF FFF8"            /* ................ */
+	$"F8F8 FF7F 7FFF FFF8 F8F8 F8F8 FFFF 7FFF"            /* ................ */
+	$"FF7F 7F7F FFFB FBFB FBFB FF7F 7F7F 7FFF"            /* ................ */
+	$"F8F8 F8FF 7F7F 7FFF FFFF F8F8 F8FF 7FFF"            /* ................ */
+	$"00FF 7F7F 7FFF FBFB FBFB FBFF 7F7F 7F7F"            /* ................ */
+	$"FFF8 F8F8 FF7F 7F7F 7F7F FFFF FF7F FF00"            /* ................ */
+	$"00FF 7F7F 7F7F FFFB FBFB FBFF 7F7F 7F7F"            /* ................ */
+	$"7FFF F8F8 F8FF 7F7F 7F7F 7F7F 7F7F FF00"            /* ................ */
+	$"0000 FF7F 7F7F FFFB FBFB FBFB FF7F 7F7F"            /* ................ */
+	$"7F7F FFF8 F8FF 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
+	$"0000 FF7F 7F7F 7FFF FBFB FBFB FBFF 7F7F"            /* ................ */
+	$"7F7F 7FFF FF7F 7F7F 7F7F 7F7F 7FFF 0000"            /* ................ */
+	$"0000 00FF 7F7F 7F7F FFFB FBFB FBFB FF7F"            /* ................ */
+	$"7F7F 7F7F 7F7F 7F7F 7F7F 7F7F FF00 0000"            /* ................ */
+	$"0000 0000 FF7F 7F7F 7FFF FBFB FBFB FBFF"            /* ................ */
+	$"7F7F 7F7F 7F7F 7F7F 7F7F 7FFF 0000 0000"            /* ................ */
+	$"0000 0000 00FF 7F7F 7FFF FBFB FBFB FBFB"            /* ................ */
+	$"FF7F 7F7F 7F7F 7F7F 7F7F FF00 0000 0000"            /* ................ */
+	$"0000 0000 0000 FFFF 7F7F FFFB FBFB FBFB"            /* ................ */
+	$"FBFF 7F7F 7F7F 7F7F FFFF 0000 0000 0000"            /* ................ */
+	$"0000 0000 0000 0000 FFFF FFFB FBFB FBFB"            /* ................ */
+	$"FBFF 7F7F 7F7F FFFF 0000 0000 0000 0000"            /* ................ */
+	$"0000 0000 0000 0000 0000 FFFF FFFF FFFF"            /* ................ */
+	$"FFFF FFFF FFFF 0000 0000 0000 0000 0000"            /* ................ */
 };
 
