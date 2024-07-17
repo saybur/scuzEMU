@@ -353,7 +353,9 @@ static void evt_mousedown(EventRecord *evt)
 		break;
 	case inZoomIn:
 	case inZoomOut:
-		/* not implemented */
+		if (TrackBox(window, evt->where, region)) {
+			window_zoom(region);
+		}
 		break;
 	case inGoAway:
 		if (pstate != STATE_OPEN && ref == WIND_MAIN) {

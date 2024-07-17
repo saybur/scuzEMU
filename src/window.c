@@ -27,7 +27,7 @@
 static WindowPtr window;
 static ListHandle list;
 static Handle icon_device, icon_files, icon_images;
-static Str31 note;
+static Str63 note;
 static Str15 str_device, str_files, str_images;
 static short content_type;
 
@@ -79,7 +79,11 @@ static void window_draw(void)
 
 	if (icon_device) {
 		SetRect(&r, 10, 10, 26, 26);
-		PlotIcon(&r, icon_device);
+		if (g_use_qdcolor) {
+			PlotCIcon(&r, (CIconHandle) icon_device);
+		} else {
+			PlotIcon(&r, icon_device);
+		}
 	}
 
 	MoveTo(36, 22);
@@ -91,13 +95,21 @@ static void window_draw(void)
 	if (content_type) {
 		if (icon_images) {
 			SetRect(&r, 130, 10, 146, 26);
-			PlotIcon(&r, icon_images);
+			if (g_use_qdcolor) {
+				PlotCIcon(&r, (CIconHandle) icon_images);
+			} else {
+				PlotIcon(&r, icon_images);
+			}
 		}
 		DrawString(str_images);
 	} else {
 		if (icon_files) {
 			SetRect(&r, 130, 10, 146, 26);
-			PlotIcon(&r, icon_files);
+			if (g_use_qdcolor) {
+				PlotCIcon(&r, (CIconHandle) icon_files);
+			} else {
+				PlotIcon(&r, icon_files);
+			}
 		}
 		DrawString(str_files);
 	}
@@ -128,6 +140,7 @@ Boolean window_init(void)
 	Point list_cell;
 	short i;
 	Point p;
+	WStateData **wsd;
 
 	if (g_use_qdcolor) {
 		window = GetNewCWindow(WIND_MAIN, 0, (WindowPtr)-1);
@@ -141,6 +154,13 @@ Boolean window_init(void)
 
 	SetPort(window);
 
+	wsd = (WStateData **) ((WindowPeek) window)->dataHandle;
+	if (wsd) {
+		HLock((Handle) wsd);
+		(**wsd).stdState.right = (**wsd).stdState.left + WINDOW_WIDTH - 1;
+		HUnlock((Handle) wsd);
+	}
+
 	list_vis = window->portRect;
 	list_vis.top = list_vis.top + WINDOW_HEADER;
 	list_vis.left = list_vis.left;
@@ -152,9 +172,15 @@ Boolean window_init(void)
 	list = LNew(&list_vis, &list_con, list_cell, 0, window, true, true, false, true);
 	list_size(list, -1, -1);
 
-	icon_device = GetIcon(ICON_DEVICE);
-	icon_files = GetIcon(ICON_FILES);
-	icon_images = GetIcon(ICON_IMAGES);
+	if (g_use_qdcolor) {
+		icon_device = (Handle) GetCIcon(ICON_DEVICE);
+		icon_files = (Handle) GetCIcon(ICON_FILES);
+		icon_images = (Handle) GetCIcon(ICON_IMAGES);
+	} else {
+		icon_device = GetIcon(ICON_DEVICE);
+		icon_files = GetIcon(ICON_FILES);
+		icon_images = GetIcon(ICON_IMAGES);
+	}
 
 	str_load(STR_GENERAL, STRI_GEN_HEAD_DEV, str_device, 16);
 	str_load(STR_GENERAL, STRI_GEN_HEAD_FILE, str_files, 16);
@@ -350,14 +376,14 @@ void window_text(unsigned char *str)
 	if (str) {
 		/* copy string to local; don't forget length in Pascal string */
 		len = (unsigned char) str[0];
-		if (len > 31) len = 31;
+		if (len > 63) len = 63;
 		BlockMove(str, note, len + 1);
 	} else {
 		/* use default */
 		if (content_type) {
-			str_load(STR_GENERAL, STRI_GEN_IMAGES, note, 32);
+			str_load(STR_GENERAL, STRI_GEN_IMAGES, note, 64);
 		} else {
-			str_load(STR_GENERAL, STRI_GEN_FILES, note, 32);
+			str_load(STR_GENERAL, STRI_GEN_FILES, note, 64);
 		}
 	}
 
@@ -377,4 +403,28 @@ void window_update(void)
 	BeginUpdate(window);
 	window_draw();
 	EndUpdate(window);
+}
+
+/**
+ * Handles /zoomEvt/.
+ *
+ * @param region  one of inZoomIn or inZoomOut to pass to ZoomWindow.
+ */
+void window_zoom(short region)
+{
+	GrafPtr old_port;
+	Rect bounds;
+
+	GetPort(&old_port);
+	SetPort(window);
+
+	EraseRect(&(window->portRect));
+	ZoomWindow(window, region, false);
+	bounds = window->portRect;
+	list_size(list,
+			bounds.right - bounds.left,
+			bounds.bottom - (bounds.top + WINDOW_HEADER));
+	InvalRect(&(window->portRect));
+
+	SetPort(old_port);
 }

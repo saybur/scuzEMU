@@ -31,5 +31,6 @@ void window_resume(Boolean resume);
 void window_show(Boolean show);
 void window_text(unsigned char *str);
 void window_update(void);
+void window_zoom(short region);
 
 #endif /* __WINDOWH__ */
