@@ -44,7 +44,7 @@ static void window_draw_note(Boolean erase)
 	SetRect(&bounds,
 			bounds.left + 10,
 			bounds.top + 32,
-			bounds.left + (WINDOW_WIDTH - 70),
+			bounds.left + (WINDOW_WIDTH - 20),
 			bounds.top + 44);
 
 	if (erase) {
