@@ -24,7 +24,7 @@
  */
 
 #define WAIT_EVENT_SLEEP    30
-#define SCSI_TIMEOUT        300
+#define SCSI_TIMEOUT        180
 #define WINDOW_MIN_HEIGHT   200
 
 /* This is more than what is actually allowed (100), here for possible future changes */

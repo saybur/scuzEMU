@@ -56,6 +56,77 @@
 
 #define TOOLBOX_MODE_PAGE       0x31
 #define TOOLBOX_MODE_PAGE_SIZE  42
+#define TOOLBOX_MODE_PAGE_REQ   TOOLBOX_MODE_PAGE_SIZE + 6
+
+/* make usage of scsi_t more obvious below */
+#define SCSI_OP_READ  -1
+#define SCSI_OP_WRITE  1
+#define SCSI_OP_NO_IO  0
+
+/**
+ * Fills a SCSIInstr for transmitting or receiving data.
+ *
+ * This has two modes of operation. If data_blk is <= 0, the data will be
+ * exchanged all at once. If data_blk is > 0, the instructions will be
+ * constructed to exchange chunks of data the size of data_blk with a potential
+ * mini-chunk for any remainder left over; this is intended to support blind
+ * transfers to slower devices if needed.
+ *
+ * If operating with data_blk <= 0 the pointer given must be at least 2 SCSIInstr
+ * long; if data_blk > 0 it must be at least 4 SCSIInstr long.
+ *
+ * @param instr     address of the SCSIInstr to be filled.
+ * @param data      the location in memory for data to be read/written.
+ * @param data_len  the overall number of bytes.
+ * @param data_blk  if >0, the size of each data block, otherwise operate on
+ *                  all data at once.
+ */
+static void scsi_instr(SCSIInstr *instr, long data, short data_len, short data_blk)
+{
+	short idx, cnt, rem;
+
+	if (! instr) return;
+
+	idx = 0;
+
+	if (data_blk <= 0) {
+		instr[idx].scOpcode = scNoInc;
+		instr[idx].scParam1 = data;
+		instr[idx].scParam2 = data_len;
+		idx++;
+	} else {
+		cnt = data_len / data_blk;
+		rem = data_len % data_blk;
+
+		if (cnt > 0) {
+			instr[idx].scOpcode = scInc;
+			instr[idx].scParam1 = data;
+			instr[idx].scParam2 = data_blk;
+			idx++;
+
+			instr[idx].scOpcode = scLoop;
+			instr[idx].scParam1 = -10;
+			instr[idx].scParam2 = cnt;
+			idx++;
+
+			if (rem > 0) {
+				instr[idx].scOpcode = scNoInc;
+				instr[idx].scParam1 = data + cnt * data_blk;
+				instr[idx].scParam2 = rem;
+				idx++;
+			}
+		} else {
+			instr[idx].scOpcode = scNoInc;
+			instr[idx].scParam1 = data;
+			instr[idx].scParam2 = rem;
+			idx++;
+		}
+	}
+
+	instr[idx].scOpcode = scStop;
+	instr[idx].scParam1 = 0;
+	instr[idx].scParam2 = 0;
+}
 
 /**
  * Low-level general handler for running a transaction against a SCSI target.
@@ -63,14 +134,13 @@
  * @param scsi_id  device ID on [0, 6].
  * @param *op      pointer to CDB array to send.
  * @param op_len   length of the CDB array.
- * @param read     true if receiving data from device, false if sending data to device.
- * @param data     address of pointer to save data, if reading, or get data, if sending.
- * @param length   number of data bytes to read, or zero to skip read/write step.
+ * @param mode     <0 for read (DATA IN), >0 for write (DATA OUT), 0 for skipping the
+ *                 in/out phase.
+ * @param instr    address of instruction to execute; may be 0 if mode is 0.
  * @return         error code, or zero for success.
  */
-static long scsi_t(short scsi_id, char *op, short op_len, Boolean read, long data, short length)
+static long scsi_t(short scsi_id, char *op, short op_len, short mode, SCSIInstr *instr)
 {
-	SCSIInstr inst[2];
 	long fail;
 	short stat, message;
 
@@ -92,38 +162,32 @@ static long scsi_t(short scsi_id, char *op, short op_len, Boolean read, long dat
 		goto scsi_t_cleanup;
 	}
 
-	if (length > 0) {
-		inst[0].scOpcode = scNoInc;
-		inst[0].scParam1 = data;
-		inst[0].scParam2 = length;
-		inst[1].scOpcode = scStop;
-		inst[1].scParam1 = 0;
-		inst[1].scParam2 = 0;
-		if (read) {
-			if (fail = SCSIRead((Ptr) &inst)) {
-				/* read failed, still need to clean up */
-				fail |= 0x40000;
-				goto scsi_t_cleanup;
-			}
-		} else {
-			if (fail = SCSIWrite((Ptr) &inst)) {
-				/* write failed, still need to clean up */
-				fail |= 0x40000;
-				goto scsi_t_cleanup;
-			}
+	if (mode < 0) {
+		if (fail = SCSIRead((Ptr) instr)) {
+			/* read failed, still need to clean up */
+			fail |= 0x40000;
+			goto scsi_t_cleanup;
+		}
+	} else if (mode > 0) {
+		if (fail = SCSIWrite((Ptr) instr)) {
+			/* write failed, still need to clean up */
+			fail |= 0x40000;
+			goto scsi_t_cleanup;
 		}
 	}
 
-	if (fail = SCSIComplete(&stat, &message, 300)) {
+	if (fail = SCSIComplete(&stat, &message, SCSI_TIMEOUT)) {
 		/* completing the command failed, can't fix */
 		fail |= 0x50000;
 		return fail;
 	}
 
-	if (stat != 0) {
+	if (stat) {
 		/* not COMMAND COMPLETE */
 		fail = 0x60000 | ((message & 0xFF) << 8) | (stat & 0xFF);
 		return fail;
+	} else {
+		return 0;
 	}
 
 scsi_t_cleanup:
@@ -159,6 +223,7 @@ static void scsi_init_cdb(char *arr)
  */
 static long scsi_request_sense(short scsi_id, long *sense)
 {
+	SCSIInstr instr[2];
 	unsigned char cdb[6];
 	unsigned char rs[18];
 	long err;
@@ -170,7 +235,8 @@ static long scsi_request_sense(short scsi_id, long *sense)
 	cdb[4] = sizeof(rs);
 	cdb[5] = 0;
 
-	if (err = scsi_t(scsi_id, (char *) cdb, sizeof(cdb), true, (long) &rs, sizeof(rs))) {
+	scsi_instr(instr, (long) &rs, sizeof(rs), 0);
+	if (err = scsi_t(scsi_id, (char *) cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		*sense = -1;
 		return err;
 	}
@@ -212,12 +278,13 @@ void scsi_alert(long fail)
  */
 long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver)
 {
+	SCSIInstr instr[2];
 	char cdb[6];
 	long fail, sense;
 	char *data;
 
 	/* reserve enough memory for the page and both headers */
-	if (! (data = NewPtr(TOOLBOX_MODE_PAGE_SIZE + 6))) {
+	if (! (data = NewPtr(TOOLBOX_MODE_PAGE_REQ))) {
 		mem_fail();
 	}
 
@@ -235,7 +302,8 @@ long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver)
 	cdb[5] = 0x00;
 
 	/* check if the device can return enough data */
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) data, 4)) {
+	scsi_instr(instr, (long) data, 4, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		if (fail == 0x40005 || fail >= 0x60000) {
 			/*
@@ -246,13 +314,14 @@ long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver)
 		}
 		goto scsi_get_emu_api_fail;
 	}
-	if (data[0] != TOOLBOX_MODE_PAGE_SIZE + 5) {
+	if (data[0] != TOOLBOX_MODE_PAGE_REQ - 1) {
 		goto scsi_get_emu_api_fail;
 	}
 
 	/* ask for that data now */
-	cdb[4] = TOOLBOX_MODE_PAGE_SIZE + 6;
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) data, TOOLBOX_MODE_PAGE_SIZE + 6)) {
+	cdb[4] = TOOLBOX_MODE_PAGE_REQ;
+	scsi_instr(instr, (long) data, TOOLBOX_MODE_PAGE_REQ, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		scsi_request_sense(scsi_id, &sense);
 		if (fail >= 0x60000) {
 			/* this time treat a failure to transition to DATA OUT as fatal */
@@ -266,7 +335,7 @@ long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver)
 	 * the vendor-specific string. If that is updated to something more
 	 * universal this can be changed to reflect that.
 	 */
-	*ver = data[TOOLBOX_MODE_PAGE_SIZE + 5];
+	*ver = data[TOOLBOX_MODE_PAGE_REQ - 1];
 	*valid = (*ver == 0x00);
 
 	DisposPtr(data);
@@ -305,6 +374,7 @@ scsi_get_emu_api_fail:
  */
 long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length)
 {
+	SCSIInstr instr[4];
 	char cdb[10];
 	Handle h;
 	unsigned char data_len;
@@ -317,7 +387,8 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 		cdb[0] = 0xD2;
 	}
 
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) &data_len, 1)) {
+	scsi_instr(instr, (long) &data_len, 1, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
 	}
@@ -335,7 +406,8 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 	}
 
 	HLock(h);
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) *h, *length)) {
+	scsi_instr(instr, (long) *h, *length, 40);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		/* attempt to read listing failed */
 		/* TODO probably should make it clear which call failed */
 		HUnlock(h);
@@ -363,6 +435,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
  */
 long scsi_read_file(short scsi_id, short index, long offset, char *data, short length)
 {
+	SCSIInstr instr[4];
 	char cdb[10];
 	long fail, sense;
 
@@ -374,7 +447,8 @@ long scsi_read_file(short scsi_id, short index, long offset, char *data, short l
 	cdb[4] = (offset >> 8) & 0xFF;
 	cdb[5] = offset & 0xFF;
 
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, (long) data, length)) {
+	scsi_instr(instr, (long) data, length, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
 	}
@@ -402,7 +476,7 @@ long scsi_set_image(short scsi_id, short index)
 	cdb[0] = 0xD8;
 	cdb[1] = index; /* upgrade if >255 support arrives */
 
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), true, 0, 0)) {
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_NO_IO, 0)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result for now */
 		return fail;
 	}
@@ -424,13 +498,15 @@ long scsi_set_image(short scsi_id, short index)
  */
 long scsi_write_start(short scsi_id, unsigned char* name)
 {
+	SCSIInstr instr[2];
 	char cdb[10];
 	long fail, sense;
 
 	scsi_init_cdb(cdb);
 	cdb[0] = 0xD3;
 
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), false, (long) name, 33)) {
+	scsi_instr(instr, (long) name, 33, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
 	}
@@ -453,6 +529,7 @@ long scsi_write_start(short scsi_id, unsigned char* name)
  */
 long scsi_write_block(short scsi_id, long offset, char *data, short length)
 {
+	SCSIInstr instr[2];
 	char cdb[10];
 	long fail, sense;
 
@@ -466,7 +543,8 @@ long scsi_write_block(short scsi_id, long offset, char *data, short length)
 	cdb[4] = (offset >> 8) & 0xFF;
 	cdb[5] = offset & 0xFF;
 
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), false, (long) data, length)) {
+	scsi_instr(instr, (long) data, length, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
 	}
@@ -491,7 +569,7 @@ long scsi_write_end(short scsi_id)
 	scsi_init_cdb(cdb);
 	cdb[0] = 0xD5;
 
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), false, 0, 0)) {
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_NO_IO, 0)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result for now */
 		return fail;
 	}
