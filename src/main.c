@@ -30,10 +30,13 @@
 #define STATE_DOWNLOAD  3
 #define STATE_UPLOAD    4
 
+#define MENU_STATE_DA   0x0100;
+#define MENU_STATE_OPN  0x0200;
+
 static short scsi_id;
 static unsigned char tb_api;
 static short open_type;
-static short pstate;
+static short pstate, menu_state;
 
 static void init_menus(void)
 {
@@ -146,44 +149,57 @@ static void evt_null(void)
 	}
 }
 
-static void update_menus(EventRecord *evt)
+static void update_menus(void)
 {
 	WindowPtr window;
-	short kind;
+	short next_menu_state, kind;
 	MenuHandle file, edit;
 
-	if (!evt) return;
-
-	file = GetMHandle(MENU_FILE);
-	edit = GetMHandle(MENU_EDIT);
-
-	/* by default allow "Open..." */
-	EnableItem(file, 1);
-	/* and disallow Edit, we don't use it */
-	DisableItem(edit, 0);
-
-	window = (WindowPtr) evt->message;
+	/* figure out current state versus previous call */
+	next_menu_state = pstate;
+	if (open_type) {
+		next_menu_state = next_menu_state | MENU_STATE_OPN;
+	}
+	window = FrontWindow();
 	if (window) {
 		kind = ((WindowPeek) window)->windowKind;
-
-		if (kind != userKind) {
-			/* enable edit menu for DAs */
-			EnableItem(edit, 0);
-			/* disallow opening when the DA is active */
-			DisableItem(file, 1);
+		if (kind < userKind) {
+			next_menu_state = next_menu_state | MENU_STATE_DA;
 		}
-	}
-
-	/* allow uploading only when we are connected to a device with a file list */
-	if (pstate == STATE_OPEN && !open_type) {
-		EnableItem(file, MENUI_UPLOAD);
 	} else {
-		DisableItem(file, MENUI_UPLOAD);
+		kind = userKind;
 	}
 
-	/* also disallow opening while a transfer is in progress */
-	if (pstate == STATE_DOWNLOAD || pstate == STATE_UPLOAD) {
-		DisableItem(file, MENUI_OPEN);
+	/* only update if there has been a change */
+	if (next_menu_state != menu_state) {
+		file = GetMHandle(MENU_FILE);
+		edit = GetMHandle(MENU_EDIT);
+
+		/* set default File state */
+		EnableItem(file, MENUI_OPEN);
+		DisableItem(file, MENUI_UPLOAD);
+		EnableItem(file, MENUI_QUIT);
+
+		/* disallow Edit, we don't use it */
+		DisableItem(edit, 0);
+
+		/* disallow opening while a transfer is in progress */
+		if (pstate == STATE_DOWNLOAD || pstate == STATE_UPLOAD) {
+			DisableItem(file, MENUI_OPEN);
+		}
+
+		/* allow uploading only when we are connected & have files */
+		if (pstate == STATE_OPEN && !open_type) {
+			EnableItem(file, MENUI_UPLOAD);
+		}
+
+		if (kind < userKind) {
+			/* DA can use Edit menu */
+			EnableItem(edit, 0);
+		}
+
+		menu_state = next_menu_state;
+		DrawMenuBar();
 	}
 }
 
@@ -482,6 +498,7 @@ int main(void)
 	 * Set early to avoid an unsafe do_quit()
 	 */
 	pstate = STATE_IDLE;
+	menu_state = pstate;
 
 	config_init();
 
@@ -529,6 +546,8 @@ int main(void)
 			}
 		}
 
+		update_menus();
+
 		switch (evt.what) {
 		case mouseDown:
 			evt_mousedown(&evt);
@@ -540,11 +559,9 @@ int main(void)
 			evt_keydown(&evt, true);
 			break;
 		case updateEvt:
-			update_menus(&evt);
 			evt_update(&evt);
 			break;
 		case activateEvt:
-			update_menus(&evt);
 			evt_activate(&evt);
 			break;
 		case osEvt:
