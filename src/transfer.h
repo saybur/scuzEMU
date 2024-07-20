@@ -21,5 +21,6 @@ void transfer_init(void);
 Boolean transfer_start(short scsi);
 void transfer_end(void);
 Boolean transfer_tick(void);
+long transfer_time(void);
 
 #endif /* __TRANSFERH__ */

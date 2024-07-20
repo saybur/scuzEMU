@@ -35,6 +35,7 @@ static Handle data;
 static short *items_ptr;
 static short items_cur, items_count, vref;
 static Boolean session, repl_dup;
+static long tstart, tend;
 
 /* transaction remaining, for progress tracking; in file blocks */
 static long tblks, tprog;
@@ -329,6 +330,7 @@ Boolean transfer_start(short scsi)
 		session = true;
 		progress_set_percent(0);
 		progress_set_count(items_count);
+		tstart = TickCount();
 		return true;
 	}
 
@@ -350,6 +352,7 @@ void transfer_end(void)
 {
 	if (session) {
 		session = false;
+		tend = TickCount();
 		DisposHandle(data);
 		DisposPtr((Ptr) items_ptr);
 		if (fopen) {
@@ -427,4 +430,17 @@ Boolean transfer_tick(void)
 	}
 
 	return true;
+}
+
+/**
+ * Calculates the time it took the last transaction to occur.
+ *
+ * This is not intended to be comprehensive or particularly reliable, it
+ * is present mainly for testing.
+ *
+ * @return  tick duration between the start and end of a transaction.
+ */
+long transfer_time(void)
+{
+	return tend - tstart;
 }

@@ -108,6 +108,16 @@ static void do_list_update(void)
 
 static void do_xfer_stop()
 {
+#if 0
+	Str15 num;
+
+	if (pstate == STATE_DOWNLOAD) {
+		NumToString(transfer_time(), num);
+		ParamText(num, 0, 0, 0);
+		NoteAlert(ALRT_GENERIC, 0);
+	}
+#endif
+
 	if (pstate == STATE_DOWNLOAD) {
 		pstate = STATE_OPEN;
 		transfer_end();
