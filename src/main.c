@@ -463,7 +463,6 @@ int main(void)
 {
 	long i;
 	EventRecord evt;
-	Boolean wneAvail;
 
 	if (! init_program(do_quit, 2)) {
 		return 128;
@@ -474,6 +473,8 @@ int main(void)
 	 */
 	pstate = STATE_IDLE;
 
+	config_init();
+
 	/*
 	 * THINK C has glue to make this call safe on <6.0.4.
 	 * Not supposed to use gestaltSystemVersion like this but
@@ -482,13 +483,13 @@ int main(void)
 	 *
 	 * Note: 6.0.8 reports as 0x0607
 	 */
-	if (!Gestalt(gestaltSystemVersion, &i) && i < 0x0607) {
+	if (! (trap_available(_Gestalt)
+			&& !Gestalt(gestaltSystemVersion, &i)
+			&& i >= 0x0607)) {
 		CautionAlert(ALRT_BAD_VERSION, 0L);
 	}
 
-	config_init();
 	init_menus();
-	wneAvail = init_is_wne();
 
 	emu_init();
 	if(! (window_init() && progress_init())) {
@@ -505,7 +506,7 @@ int main(void)
 
 	while (true) {
 
-		if (wneAvail) {
+		if (g_use_wne) {
 			if (!WaitNextEvent(everyEvent, &evt, WAIT_EVENT_SLEEP, 0L)) {
 				evt_null();
 				continue;

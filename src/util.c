@@ -16,6 +16,7 @@
 
 #include "util.h"
 
+static Boolean masked_trap_table;
 static void (*quit_func)(void);
 static Cursor busy_curs;
 
@@ -147,8 +148,13 @@ void center_window(WindowPtr window)
 
 	if (! window) return;
 
-	gd = GetMainDevice();
-	r = (*gd)->gdRect;
+	if (trap_available(_GetMainDevice)) {
+			gd = GetMainDevice();
+		r = (*gd)->gdRect;
+	} else {
+		r = (*GetGrayRgn())->rgnBBox;
+	}
+
 	x = (r.right - r.left) / 2;
 	y = (r.bottom - r.top) / 2;
 
@@ -165,22 +171,6 @@ void center_window(WindowPtr window)
 	MovePortTo(x, y);
 
 	SetPort(old_port);
-}
-
-/**
- * @return  true if WaitNextEvent is implemented
- */
-Boolean init_is_wne(void)
-{
-	long v;
-
-	/* check if on Mac Plus or later */
-	if (Gestalt(gestaltMachineType, &v) && v >= 4) {
-		/* see THINK Reference example in WaitNextEvent */
-		return NGetTrapAddress(0xA860, 1) != NGetTrapAddress(0xA89F, 1);
-	} else {
-		return false;
-	}
 }
 
 /**
@@ -224,6 +214,11 @@ Boolean init_program(void (*quit)(void), short ptrcnt)
 		HUnlock((Handle) ch);
 		DisposHandle((Handle) ch);
 	}
+
+	/* cache this for re-use, see trap_available for info */
+	masked_trap_table =
+			GetToolboxTrapAddress(0xA86E) ==
+			GetToolboxTrapAddress(0xAA6E);
 
 	/* now OK to assign per contract */
 	quit_func = quit;
@@ -332,4 +327,32 @@ void str_load(short id, short idx, unsigned char *str, short size)
 	}
 
 	DisposPtr((Ptr) tmp);
+}
+
+/**
+ * Indicates whether a trap is implemented.
+ *
+ * This looks arcane but has good underlying logic, see the guidance from
+ * IM Trap Manager and THINK Reference "About Compatibility" for specifics.
+ *
+ * @param trap  trap address, like _WaitNextEvent or 0xA860
+ * @return      true if implemented, false otherwise.
+ */
+Boolean trap_available(short trap)
+{
+	TrapType trap_type;
+
+	if ((trap & 0x0800) > 0) {
+		trap_type = ToolTrap;
+		trap = trap & 0x07FF;
+	} else {
+		trap_type = OSTrap;
+	}
+
+	if (masked_trap_table && trap >= 0x0200) {
+		return false;
+	} else {
+		return (NGetTrapAddress(trap, trap_type) !=
+			GetToolboxTrapAddress(_Unimplemented));
+	}
 }

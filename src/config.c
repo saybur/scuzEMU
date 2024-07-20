@@ -19,6 +19,7 @@
 #include "scsi.h"
 #include "util.h"
 
+Boolean g_use_wne;
 Boolean g_use_qdcolor;
 
 static unsigned char mode_checked;
@@ -90,11 +91,19 @@ void config_init(void)
 {
 	long gr;
 
+	mode_checked = 0;
+
+	if (! trap_available(_Gestalt)) {
+		g_use_wne = false;
+		g_use_qdcolor = false;
+		return;
+	}
+
+	g_use_wne = trap_available(_WaitNextEvent);
+
 	if (! Gestalt(gestaltQuickdrawFeatures, &gr)) {
 		g_use_qdcolor = gr & (1 << gestaltHasColor);
 	} else {
 		g_use_qdcolor = false;
 	}
-
-	mode_checked = 0;
 }

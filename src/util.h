@@ -36,12 +36,12 @@ void alert_template_error(short type, short res_id, short str_id, short err);
 void arr_del_short(short *arr, short len, short itm);
 void busy_cursor(void);
 void center_window(WindowPtr window);
-Boolean init_is_wne(void);
 Boolean init_program(void (*quit)(void), short ptrcnt);
 char lowerc(char c);
 void mem_fail(void);
 void repl_caret(unsigned char *s);
 Boolean str_eq(char *a, const char *b, short len);
 void str_load(short id, short idx, unsigned char *str, short size);
+Boolean trap_available(short trap);
 
 #endif /* __UTILH__ */

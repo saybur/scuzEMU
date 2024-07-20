@@ -17,6 +17,7 @@
 #ifndef __CONFIGH__
 #define __CONFIGH__
 
+extern Boolean g_use_wne;
 extern Boolean g_use_qdcolor;
 
 Boolean config_check_mode(short scsi);
