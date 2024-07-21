@@ -46,14 +46,14 @@ data 'DITL' (128, "About") {
 
 data 'DITL' (257, "Bad System") {
 	$"0001 0000 0000 003F 012A 0053 0164 0402"            /* .......?.*.S.d.. */
-	$"4F4B 0000 0000 000A 004E 003B 0164 886E"            /* OK.......N.;.dàn */
+	$"4F4B 0000 0000 000A 004E 003B 0164 8868"            /* OK.......N.;.dàh */
 	$"5379 7374 656D 2036 2E30 2E37 2061 6E64"            /* System 6.0.7 and */
 	$"2065 6172 6C69 6572 206D 6179 2065 7870"            /*  earlier may exp */
 	$"6572 6965 6E63 6520 6572 726F 7273 2E20"            /* erience errors.  */
 	$"506C 6561 7365 2072 6570 6F72 7420 616E"            /* Please report an */
-	$"7920 796F 7520 6578 7065 7269 656E 6365"            /* y you experience */
-	$"2074 6F20 7468 6520 6170 706C 6963 6174"            /*  to the applicat */
-	$"696F 6E20 6465 7665 6C6F 7065 722E"                 /* ion developer. */
+	$"7920 7072 6F62 6C65 6D73 2074 6F20 7468"            /* y problems to th */
+	$"6520 6170 706C 6963 6174 696F 6E20 6465"            /* e application de */
+	$"7665 6C6F 7065 722E"                                /* veloper. */
 };
 
 data 'DITL' (256, "Generic") {
@@ -572,7 +572,7 @@ data 'BNDL' (128) {
 };
 
 data 'scuz' (0, "Owner resource") {
-	$"0B73 6375 7A45 4D55 2030 2E34"                      /* .scuzEMU 0.4 */
+	$"0B73 6375 7A45 4D55 2030 2E35"                      /* .scuzEMU 0.5 */
 };
 
 data 'FREF' (128) {

@@ -60,19 +60,8 @@ clicking "Yes" when asked if you'd like to continue connecting.
 Bugs And Missing Features
 -------------------------
 
-The following issues are known to exist in this application:
-
-* Some graphical elements are missing.
-* Downloading is slower than it should be; adding blind transfers on supported
-  systems would probably improve this.
-
-More generally:
-
-* Testing on System 6 has been minimal. It should theoretically work, at least
-  under 6.0.8, but as a kid who grew up with System 7 I prefer that environment
-  on my retro Macs and have done most of my debugging there.
-* The user interface is simple, to a fault. I haven't decided if that is good
-  or bad yet.
+The program should be mostly feature-complete. Any known problems or planned
+enhancements will be listed on Github.
 
 I am a novice Mac application developer and the code likely shows it. There are
 many more bugs yet to be discovered. If you find one, please report it!
@@ -98,6 +87,11 @@ Changelog
 ---------
 
 Major changes in each release:
+
+### 0.5
+
+- Fixed some significant bugs found on earlier systems.
+- User interface adjustments.
 
 ### 0.4
 
