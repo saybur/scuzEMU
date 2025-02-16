@@ -2,7 +2,8 @@ scuzEMU
 =======
 
 Welcome to scuzEMU, an open source Mac "SCSI EMulator Utility." This program
-allows you to remotely control certain SCSI emulators to:
+allows you to remotely control certain SCSI emulators (and software emulators)
+to:
 
 * Download files within a /shared/ folder on the SD card,
 * Upload files into that folder,
@@ -13,16 +14,18 @@ allows you to remotely control certain SCSI emulators to:
 Compatibility
 -------------
 
-Minimum firmware versions tested to work with this application:
+Devices/emulators tested to work with this application:
 
-* ZuluSCSI 2024.07.16
+* ZuluSCSI (firmware 2024.07.16 and later)
     * In `zuluscsi.ini` under the `[SCSI]` section, requires `EnableToolbox=1`.
 * scuznet
     * Only file downloads from the `shared` directory are supported.
     * Requires firmware built after 2024-07-16 with `-DUSE_TOOLBOX` set.
+* [MAME 0.273](https://wiki.mamedev.org/index.php/Driver:Mac_68K#How_do_I_get_files_into_the_emulation?)
+  and later.
 
-If you find this works with an emulator, or if you have changes you would like
-to contribute, please contact @saybur via 68kmla.org or let me know on Github.
+If you find this works with something, or if you have changes you would like to
+contribute, please contact @saybur via 68kmla.org or let me know on Github.
 
 What's Inside This Document
 ---------------------------
