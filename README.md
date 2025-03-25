@@ -38,14 +38,18 @@ How To Use This Program
 -----------------------
 
 1. Start the application by double-clicking the scuzEMU program.
-2. Choose the SCSI ID you have your emulator configured to use.
+2. Choose the SCSI ID you have your emulator configured to use (see below).
 3. Choose whether you want to download files or change images.
 4. Press OK.
 5. Double-click an item to either download it (in files mode) or change to that
    image (in images mode).
 
-When switching images, you will still need to drag the current image to the
-Trash to "eject" it. The image chosen should be loaded automatically.
+For most devices, file transfers will be identical for _any_ SCSI ID the device
+is using. For example, on a ZuluSCSI with `HD0.img`, `HD1.img`, and a bunch of
+CD images in a CD3 folder, you can use 0, 1, or 3 as the SCSI ID to see
+downloadable files. When changing images, you must select the device ID with
+the images to change. In the previous example only ID 3 would work for changing
+CDs and it would only apply to that emulated CD drive.
 
 A Note of Caution
 -----------------
