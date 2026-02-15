@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -14,6 +14,7 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "constants.h"
 #include "emu.h"
 #include "progress.h"
@@ -22,7 +23,8 @@
 #include "util.h"
 #include "window.h"
 
-#define UPLOAD_BUF_SIZE 512
+#define UPLOAD_BLK_SIZE  512
+#define UPLOAD_BUF_SIZE  (UPLOAD_MAX_BLOCKS * UPLOAD_BLK_SIZE)
 
 static short scsi_id;
 static Handle data;
@@ -249,21 +251,28 @@ void upload_end(void)
 }
 
 /**
- * Executes upload block(s). If this returns false,
+ * Executes upload block(s).
  *
  * @return  true if upload ticks should continue, false otherwise.
  */
 Boolean upload_tick(void)
 {
-	long err, xfer;
+	long err, xfer, xblk;
 
 	if (! fopen) return false;
 
 	/* choose size of this upload tick */
-	if (frem < UPLOAD_BUF_SIZE) {
+	if (frem < UPLOAD_BLK_SIZE) {
+		xblk = 1;
 		xfer = frem;
 	} else {
-		xfer = UPLOAD_BUF_SIZE;
+		if (config_has_capability(scsi_id, CAP_LARGE_SEND)) {
+			xblk = frem / UPLOAD_BLK_SIZE;
+			if (xblk > UPLOAD_MAX_BLOCKS) xblk = UPLOAD_MAX_BLOCKS;
+		} else {
+			xblk = 1;
+		}
+		xfer = xblk * UPLOAD_BLK_SIZE;
 	}
 	frem -= xfer;
 
@@ -272,17 +281,25 @@ Boolean upload_tick(void)
 		upload_end();
 		return false;
 	} else {
-		progress_set_percent(fblk * 100 / (fsize / UPLOAD_BUF_SIZE + 1));
+		progress_set_percent(fblk * 100 / (fsize / UPLOAD_BLK_SIZE + 1));
 
-		/* send the data block */
+		/* send the data block(s) */
 		HLock(data);
 		if (err = FSRead(fref, &xfer, *data)) {
 			upload_alert_ferr(err);
-		} else if (err = scsi_write_block(scsi_id, fblk, *data, (short) xfer)) {
-			scsi_alert(err);
+		} else {
+			if (xblk > 1) {
+				if (err = scsi_write_blocks(scsi_id, fblk, *data, (short) xblk)) {
+					scsi_alert(err);
+				}
+			} else {
+				if (err = scsi_write_bytes(scsi_id, fblk, *data, (short) xfer)) {
+					scsi_alert(err);
+				}
+			}
 		}
 		HUnlock(data);
-		fblk++;
+		fblk += xblk;
 
 		if (err) {
 			upload_end();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -14,6 +14,7 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "constants.h"
 #include "emu.h"
 #include "progress.h"
@@ -27,7 +28,8 @@
  * This compilation unit implements the file downloading logic.
  */
 
-#define XFER_BUF_SIZE 4096
+#define XFER_BLK_SIZE  4096
+#define XFER_BUF_SIZE  (XFER_MAX_BLOCKS * XFER_BLK_SIZE)
 
 /* persist across a full transaction */
 static short scsi_id;
@@ -319,7 +321,7 @@ Boolean transfer_start(short scsi)
 			alert_template(0, ALRT_GENERIC, STRI_GA_NSF);
 			goto transfer_start_fail;
 		}
-		tblks += fsize / XFER_BUF_SIZE + 1;
+		tblks += fsize / XFER_BLK_SIZE + 1;
 	}
 	if (tblks < 1) tblks = 1; /* div by 0 safety */
 
@@ -371,7 +373,7 @@ void transfer_end(void)
  */
 Boolean transfer_tick(void)
 {
-	long err, xfer, percent;
+	long err, xfer, xblk, percent;
 
 	if (! session) return false;
 
@@ -391,19 +393,36 @@ Boolean transfer_tick(void)
 	}
 
 	/* choose size of this transfer tick */
-	if (frem < XFER_BUF_SIZE) {
+	if (frem < XFER_BLK_SIZE) {
+		xblk = 1;
 		xfer = frem;
 	} else {
-		xfer = XFER_BUF_SIZE;
+		if (config_has_capability(scsi_id, CAP_LARGE_RECEIVE)) {
+			xblk = frem / XFER_BLK_SIZE;
+			if (xblk > XFER_MAX_BLOCKS) xblk = XFER_MAX_BLOCKS;
+		} else {
+			xblk = 1;
+		}
+		xfer = xblk * XFER_BLK_SIZE;
 	}
 	frem -= xfer;
 
 	/* perform data exchange */
 	HLock(data);
-	if (err = scsi_read_file(scsi_id, findex, fblk, *data, (short) xfer)) {
-		scsi_alert(err);
-	} else if (err = FSWrite(fref, &xfer, *data)) {
-		transfer_alert_ferr(err);
+	if (xblk > 1) {
+		if (err = scsi_read_file_blocks(scsi_id, findex, fblk, *data, (short) xblk)) {
+			scsi_alert(err);
+		}
+	} else {
+		if (err = scsi_read_file_bytes(scsi_id, findex, fblk, *data, (short) xfer)) {
+			scsi_alert(err);
+		}
+	}
+	/* write results to file if valid */
+	if (! err) {
+		if (err = FSWrite(fref, &xfer, *data)) {
+			transfer_alert_ferr(err);
+		}
 	}
 	if (err) {
 		HUnlock(data);
@@ -416,9 +435,9 @@ Boolean transfer_tick(void)
 		types_find(*data, fname, &ftype, &fcreator);
 	}
 	HUnlock(data);
-	fblk++;
+	fblk += xblk;
 
-	tprog++;
+	tprog += xblk;
 	percent = tprog * 100 / tblks;
 	progress_set_percent((short) percent);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,10 @@
 
 /* This is more than what is actually allowed (100), here for possible future changes */
 #define MAXIMUM_FILES       255
+
+/* maximums for the new (2026.02+) variable length transfers */
+#define XFER_MAX_BLOCKS     4   /* 4 * 4K = 16K */
+#define UPLOAD_MAX_BLOCKS   32  /* 32 * 512 = 16K */
 
 /*
  * ----------------------------------------

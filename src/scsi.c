@@ -470,7 +470,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
 }
 
 /**
- * Reads files from the SCSI emulator.
+ * Reads file bytes from the SCSI emulator.
  *
  * CDB is 0xD1, file_index, then a 32-bit value for the 4K offset within the
  * file to read. Remaining CDB bytes are ignored.
@@ -482,7 +482,7 @@ long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length
  * @param length   number of bytes to read.
  * @return         0 on success, non-zero on failure.
  */
-long scsi_read_file(short scsi_id, short index, long offset, char *data, short length)
+long scsi_read_file_bytes(short scsi_id, short index, long offset, char *data, short length)
 {
 	SCSIInstr instr[4];
 	char cdb[10];
@@ -497,6 +497,49 @@ long scsi_read_file(short scsi_id, short index, long offset, char *data, short l
 	cdb[5] = offset & 0xFF;
 
 	scsi_instr(instr, (long) data, length, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		return fail;
+	}
+
+	return 0;
+}
+
+/**
+ * Reads file bytes from the SCSI emulator in 4K blocks.
+ *
+ * This uses the post-February 2026 0xD1 CDB format, only safe to use if the device
+ * capabilities support it (responsibility of the caller). Format is identical except for
+ * byte 6, which is the number of 4K blocks to read.
+ *
+ * @param scsi_id  device ID on [0, 6].
+ * @param index    file index from the file listing.
+ * @param offset   file offset to read from, in 4K chunks.
+ * @param *data    pointer for data read off the SCSI device.
+ * @param blocks   number of 4K blocks to read, max 16.
+ * @return         0 on success, non-zero on failure.
+ */
+long scsi_read_file_blocks(short scsi_id, short index, long offset, char *data, short blocks)
+{
+	SCSIInstr instr[4];
+	char cdb[10];
+	long fail, sense;
+
+	/* device reverts to original format if byte 6 is zero, bypass by skipping */
+	if (blocks == 0) return 0;
+	/* limit size to storage */
+	if (blocks > 16) blocks = 16;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD1;
+	cdb[1] = index;
+	cdb[2] = (offset >> 24) & 0xFF;
+	cdb[3] = (offset >> 16) & 0xFF;
+	cdb[4] = (offset >> 8) & 0xFF;
+	cdb[5] = offset & 0xFF;
+	cdb[6] = blocks;
+
+	scsi_instr(instr, (long) data, 4096 * blocks, 4096);
 	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
@@ -564,7 +607,7 @@ long scsi_write_start(short scsi_id, unsigned char* name)
 }
 
 /**
- * Sends an upload file block to the emulator.
+ * Sends upload file bytes to the emulator.
  *
  * CDB is 0xD4, two big-endian bytes of data length (max 512), three big-endian
  * bytes indicating the 512-byte block offset to write into, then remaining bytes
@@ -576,7 +619,7 @@ long scsi_write_start(short scsi_id, unsigned char* name)
  * @param length   the length of data, max 512.
  * @return         error code, or zero for success.
  */
-long scsi_write_block(short scsi_id, long offset, char *data, short length)
+long scsi_write_bytes(short scsi_id, long offset, char *data, short length)
 {
 	SCSIInstr instr[2];
 	char cdb[10];
@@ -593,6 +636,45 @@ long scsi_write_block(short scsi_id, long offset, char *data, short length)
 	cdb[5] = offset & 0xFF;
 
 	scsi_instr(instr, (long) data, length, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		return fail;
+	}
+
+	return 0;
+}
+
+/**
+ * Uploads file block(s) to the emulator.
+ *
+ * This uses the post-February 2026 0xD4 CDB format, only safe to use if the device
+ * capabilities support it (responsibility of the caller).
+ *
+ * @param scsi_id  the device at the given SCSI ID to command.
+ * @param offset   24 bit offset where the block should be saved.
+ * @param data     the data to save.
+ * @param blocks   the number of 512-byte blocks to send, max 128 (64K).
+ * @return         error code, or zero for success.
+ */
+long scsi_write_blocks(short scsi_id, long offset, char *data, short blocks)
+{
+	SCSIInstr instr[4];
+	char cdb[10];
+	long fail, sense;
+
+	/* device reverts to original format if byte 6 is zero, bypass by skipping */
+	if (blocks == 0) return 0;
+	/* limit size to storage */
+	if (blocks > 128) blocks = 128;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD4;
+	cdb[3] = (offset >> 16) & 0xFF;
+	cdb[4] = (offset >> 8) & 0xFF;
+	cdb[5] = offset & 0xFF;
+	cdb[6] = blocks;
+
+	scsi_instr(instr, (long) data, blocks * 512, 512);
 	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;

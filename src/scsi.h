@@ -22,10 +22,12 @@ void scsi_alert(long fail);
 long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver);
 long scsi_get_emu_capabilities(short scsi_id, unsigned char *caps);
 long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length);
-long scsi_read_file(short scsi_id, short index, long offset, char *data, short length);
+long scsi_read_file_bytes(short scsi_id, short index, long offset, char *data, short length);
+long scsi_read_file_blocks(short scsi_id, short index, long offset, char *data, short blocks);
 long scsi_set_image(short scsi_id, short index);
 long scsi_write_start(short scsi_id, unsigned char* name);
-long scsi_write_block(short scsi_id, long offset, char *data, short length);
+long scsi_write_bytes(short scsi_id, long offset, char *data, short length);
+long scsi_write_blocks(short scsi_id, long offset, char *data, short blocks);
 long scsi_write_end(short scsi_id);
 
 #endif /* __SCSIH__ */
