@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -17,10 +17,14 @@
 #ifndef __CONFIGH__
 #define __CONFIGH__
 
+#define CAP_LARGE_RECEIVE     1
+#define CAP_LARGE_SEND        2
+
 extern Boolean g_use_wne;
 extern Boolean g_use_qdcolor;
 
 Boolean config_check_mode(short scsi);
+Boolean config_has_capability(short scsi, short feature);
 void config_init(void);
 
 #endif /* __CONFIGH__ */

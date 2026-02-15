@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -32,7 +32,7 @@
  * * 0xD5: end send [sendFileEnd]
  * * 0xD7: list images [CDx / onListFiles]
  * * 0xD8: set next image [onSetNextCD]
- * * 0xD9: list devices [onListDevices] (not implemented as of now)
+ * * 0xD9: metadata (varies on subcommand)
  * * 0xDA: count images [CDx / doCountFiles]
  *
  * Above is as of 2024-06-15; the command set here may change in the future.
@@ -345,6 +345,55 @@ scsi_get_emu_api_fail:
 	*valid = false;
 	DisposPtr(data);
 	return fail;
+}
+
+/**
+ * Queries a SCSI emulator for special capabilities.
+ *
+ * BS release v2026.02.08 added variable length send/receive commands along
+ * with a change to the 0xD9 command to check if the new formats are supported.
+ * The API version did not change. To differentiate the old/new 0xD9 format we
+ * will query the 'get capabilities' subcommand and check if 1) 8 bytes are
+ * returned and if 2) all non-capability byes are 0; in the old version at
+ * least byte 7 should always be 0xFF for the non-emulated ID 7.
+ *
+ * 0xD9 clashes with Apple CD 300 plus audio commands. Hopefully the early
+ * termination of DATA IN won't cause grief with real devices :(
+ *
+ * @param scsi_id    device ID on [0, 6].
+ * @param caps*      returned capabilities
+ * @return           error code, or zero for success.
+ */
+long scsi_get_emu_capabilities(short scsi_id, unsigned char *caps)
+{
+	SCSIInstr instr[2];
+	char cdb[10];
+	long fail, sense;
+	char data[8];
+	short i;
+
+	/* default to original capabilities */
+	*caps = 0;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD9;
+	cdb[1] = 1; /* get capabilities */
+	cdb[8] = 8;
+
+	scsi_instr(instr, (long) data, 8, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		return fail;
+	}
+
+	/* first byte is toolbox API version, next is caps, rest should be 0 */
+	for (i = 0; i < 8; i++) {
+		if (i == 1) continue;
+		if (data[i] != 0) return 0;
+	}
+
+	*caps = data[1];
+	return 0;
 }
 
 /**

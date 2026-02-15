@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,7 @@
 void scsi_alert(long fail);
 
 long scsi_get_emu_api(short scsi_id, Boolean *valid, unsigned char *ver);
+long scsi_get_emu_capabilities(short scsi_id, unsigned char *caps);
 long scsi_list_files(short scsi_id, short open_type, Handle *data, short *length);
 long scsi_read_file(short scsi_id, short index, long offset, char *data, short length);
 long scsi_set_image(short scsi_id, short index);

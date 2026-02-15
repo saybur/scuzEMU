@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -23,6 +23,7 @@ Boolean g_use_wne;
 Boolean g_use_qdcolor;
 
 static unsigned char mode_checked;
+static unsigned char capabilities[8];
 
 /**
  * Reads the 0x31 mode page and sets version information appropriately.
@@ -36,6 +37,11 @@ static unsigned char mode_checked;
  * As of July 2024 this check is mostly pointless, the only toolbox API is v0, but in
  * future releases there will likely be a need to get/set a version to communicate
  * properly.
+ *
+ * As of February 2026 there is a kind of 'version 0+' with variable transfer length
+ * support. 0xD9 has been modified to return a 'capabilities' flag indicating whether
+ * this support is present. This function will query that command to look for the new
+ * status information; see scsi.c for the mechanism.
  *
  * @param scsi  SCSI ID to check against, between 0-6.
  * @return      true if connecting should continue, false otherwise.
@@ -81,7 +87,27 @@ Boolean config_check_mode(short scsi)
 		}
 	}
 
+	/* load the capabilities information for this device */
+	if (valid) {
+		/* deliberately ignore errors here */
+		scsi_get_emu_capabilities(scsi, &(capabilities[scsi]));
+	}
+
 	return valid;
+}
+
+/**
+ * Uses the post-Feb 2026 capabilities information to check if newer features
+ * are available.
+ *
+ * @param scsi     SCSI ID to check against, between 0-6.
+ * @param feature  feature flag, see header for definitions.
+ * @return         true if capability is available, false otherwise.
+ */
+Boolean config_has_capability(short scsi, short feature)
+{
+	if (scsi < 0 || scsi > 6) return false;
+	return capabilities[scsi] & feature;
 }
 
 /**
