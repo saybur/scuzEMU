@@ -39,7 +39,7 @@ void center_window(WindowPtr window);
 Boolean init_program(void (*quit)(void), short ptrcnt);
 char lowerc(char c);
 void mem_fail(void);
-void repl_caret(unsigned char *s);
+void repl_chars(unsigned char *s, char a, char b);
 Boolean str_eq(char *a, const char *b, short len);
 void str_load(short id, short idx, unsigned char *str, short size);
 Boolean trap_available(short trap);

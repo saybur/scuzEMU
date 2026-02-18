@@ -247,13 +247,17 @@ short emu_populate_list(ListHandle list, Handle data, short data_len)
 	/* modify data to make names Pascal strings */
 	for (i = 0; i < rcnt; i++) {
 		t = offsets[i];
-		for (j = 2; j <= 34; j++) {
+		d[t+1] = 31; /* fallback to max safe HFS name */
+		for (j = 2; j < 33; j++) {
 			if (d[t+j] == '\0') {
 				/* add Pascal length */
 				d[t+1] = j - 2;
 				break;
 			}
 		}
+		/* cleanup instances of the HFS separator */
+		repl_chars(&(d[t+1]), ':', '/');
+		/* TODO more sensible sanitization would be prudent */
 	}
 
 	/* sort by file name */

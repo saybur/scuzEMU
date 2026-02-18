@@ -256,15 +256,17 @@ void mem_fail(void)
 }
 
 /**
- * Scans a Pascal string for instances of '^' and replaces with ' '. Useful for making
- * sure there are no inadvertent "^0" type components within a string.
+ * Scans a Pascal string for all instances of a character and replaces them in-place
+ * with another character.
  *
  * This could be a Munger() call if it were any more complicated (which it is not). It
  * would be interesting to check if that would be faster here though...
  *
  * @param s  the string to check.
+ * @param a  the character to be replaced.
+ * @param b  the character to do the replacing.
  */
-void repl_caret(unsigned char *s)
+void repl_chars(unsigned char *s, char a, char b)
 {
 	short i, len;
 
@@ -272,7 +274,7 @@ void repl_caret(unsigned char *s)
 
 	len = s[0];
 	for (i = 1; i <= len; i++) {
-		if (s[i] == '^') s[i] = ' ';
+		if (s[i] == a) s[i] = b;
 	}
 }
 
