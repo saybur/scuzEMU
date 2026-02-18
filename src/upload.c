@@ -53,8 +53,8 @@ static void upload_alert_ferr(short err)
 /**
  * Checks a given string to see if the characters are allowed on the remote filesystem.
  *
- * This is likely more restrictive than the device, allowing only the fully portable
- * POSIX filename characters from Wikipedia.
+ * This is likely more restrictive than the device, allowing only the POSIX portable
+ * filename character set from Wikipedia, plus the common space character.
  *
  * @param str  the Pascal string to check.
  * @return     true if OK, false otherwise.
@@ -72,7 +72,8 @@ static Boolean upload_check_name(unsigned char *name)
 				|| (c >= 97 && c <= 122) /* a-z */
 				|| c == '_'
 				|| c == '-'
-				|| c == '.')) {
+				|| c == '.'
+				|| c == ' ')) {
 			return false;
 		}
 	}
