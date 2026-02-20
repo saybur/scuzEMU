@@ -81,7 +81,7 @@
  * @param data_blk  if >0, the size of each data block, otherwise operate on
  *                  all data at once.
  */
-static void scsi_instr(SCSIInstr *instr, long data, short data_len, short data_blk)
+static void scsi_instr(SCSIInstr *instr, long data, long data_len, short data_blk)
 {
 	short idx, cnt, rem;
 
@@ -539,7 +539,7 @@ long scsi_read_file_blocks(short scsi_id, short index, long offset, char *data, 
 	cdb[5] = offset & 0xFF;
 	cdb[6] = blocks;
 
-	scsi_instr(instr, (long) data, 4096 * blocks, 4096);
+	scsi_instr(instr, (long) data, blocks * 4096L, 4096);
 	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;
@@ -674,7 +674,7 @@ long scsi_write_blocks(short scsi_id, long offset, char *data, short blocks)
 	cdb[5] = offset & 0xFF;
 	cdb[6] = blocks;
 
-	scsi_instr(instr, (long) data, blocks * 512, 512);
+	scsi_instr(instr, (long) data, blocks * 512L, 512);
 	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
 		scsi_request_sense(scsi_id, &sense); /* discard result */
 		return fail;

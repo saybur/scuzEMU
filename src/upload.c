@@ -23,7 +23,7 @@
 #include "util.h"
 #include "window.h"
 
-#define UPLOAD_BLK_SIZE  512
+#define UPLOAD_BLK_SIZE  512L
 #define UPLOAD_BUF_SIZE  (UPLOAD_MAX_BLOCKS * UPLOAD_BLK_SIZE)
 
 static short scsi_id;

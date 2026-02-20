@@ -31,8 +31,8 @@
 #define MAXIMUM_FILES       255
 
 /* maximums for the new (2026.02+) variable length transfers */
-#define XFER_MAX_BLOCKS     4   /* 4 * 4K = 16K */
-#define UPLOAD_MAX_BLOCKS   32  /* 32 * 512 = 16K */
+#define XFER_MAX_BLOCKS     16  /* 16 * 4K = 64K */
+#define UPLOAD_MAX_BLOCKS   64  /* 64 * 512 = 32K */
 
 /*
  * ----------------------------------------

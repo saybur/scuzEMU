@@ -28,7 +28,7 @@
  * This compilation unit implements the file downloading logic.
  */
 
-#define XFER_BLK_SIZE  4096
+#define XFER_BLK_SIZE  4096L
 #define XFER_BUF_SIZE  (XFER_MAX_BLOCKS * XFER_BLK_SIZE)
 
 /* persist across a full transaction */
