@@ -2,8 +2,8 @@ scuzEMU
 =======
 
 Welcome to scuzEMU, an open source Mac "SCSI EMulator Utility." This program
-allows you to remotely control certain SCSI emulators (and software emulators)
-to:
+allows you to remotely control certain SCSI device emulators (and software
+emulators) to:
 
 * Download files within a /shared/ folder on the SD card,
 * Upload files into that folder,
@@ -14,10 +14,11 @@ to:
 Compatibility
 -------------
 
-Devices/emulators tested to work with this application:
+Devices/emulators tested with this application:
 
 * ZuluSCSI (firmware 2024.07.16 and later)
     * In `zuluscsi.ini` under the `[SCSI]` section, requires `EnableToolbox=1`.
+* BlueSCSI (firmware v2025.10.27 and later)
 * scuznet
     * Only file downloads from the `shared` directory are supported.
     * Requires firmware built after 2024-07-16 with `-DUSE_TOOLBOX` set.
@@ -27,21 +28,29 @@ Devices/emulators tested to work with this application:
 If you find this works with something, or if you have changes you would like to
 contribute, please contact @saybur via 68kmla.org or let me know on Github.
 
-What's Inside This Document
----------------------------
+How To Install
+--------------
 
-Information about the program, basic usage instructions, and more
-self-indulgent stuff in the style of old-school "Read Me First" documents
-included with Mac apps.
+[Download the latest release](https://github.com/saybur/scuzemu/releases/latest).
+There are several formats available:
 
-How To Use This Program
------------------------
+* `.img` is a small hard disk image for use with many standalone devices.
+   Rename the file to something like `HD5.img` and drop it on an SD card.
+* `.dsk` is an 800K floppy image, usable in MAME.
+* `.sit` is for everyone else.
+
+The `.img` and `.dsk` include [binUnpk](https://www.gryphel.com/c/minivmac/extras/binunpk/),
+a GPLv2 program for decoding `.bin` files. As the link notes, "[i]t is mostly
+useful for unpacking the Stuffit Expander 4.0.1 archive."
+
+How To Use
+----------
 
 1. Start the application by double-clicking the scuzEMU program.
 2. Choose the SCSI ID you have your emulator configured to use (see below).
 3. Choose whether you want to download files or change images.
 4. Press OK.
-5. Double-click an item to either download it (in files mode) or change to that
+5. Double-click an item to download it (in files mode) or change to that CD
    image (in images mode).
 
 For most devices, file transfers will be identical for _any_ SCSI ID the device
@@ -94,6 +103,14 @@ Changelog
 ---------
 
 Major changes in each release:
+
+### 0.6
+
+- Larger (faster) transfers added to the toolbox API mid-February 2026 are now
+  supported.
+- Filenames longer than 31 characters no longer cause an error (issue #3).
+- Workaround for filenames with ':' character(s) (issue #6).
+- First version with a `.dsk` release (issue #7).
 
 ### 0.5
 

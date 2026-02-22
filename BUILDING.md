@@ -10,13 +10,15 @@ version 5 may work as well. This is the basic process to compile this yourself:
    Roman / Mac line ending format.
 3. Copy the files over to the development Mac.
 4. In THINK Project Manager, create a new project folder.
-5. Add all code files in `export` to the project (*.c, *.h, *.r). You will need
-   to assign the type `TEXT` to `scuzemu.r` or it will not show up in the list
-   of files.
+5. Add all code files in `export` to the project (*.c, *.h, *.r). Files will
+   need the type `TEXT` or they may not show up in the list of files; either
+   assign types manually or use something like
+   (PC Exchange)[https://en.wikipedia.org/wiki/PC_Exchange] to set the type
+   based on file suffix.
 6. Navigate to your "Mac Libraries" folder, find `MacTraps` and add it to the
    project.
 7. Go to the Project menu, choose "Set Project Type..." and set "Creator" to
-   `scuz`. Set "Partition (K)" to `128` and "SIZE Flags" to 5880.
+   `scuz`. Set "Partition (K)" to `256` and "SIZE Flags" to 5880.
 8. Go to Project again, choose "Build Application..." and select where you want
    to save the compiled binary.
 
