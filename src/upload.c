@@ -258,7 +258,8 @@ void upload_end(void)
  */
 Boolean upload_tick(void)
 {
-	long err, xfer, xblk;
+	long err, xfer;
+	short xblk, oxblk;
 
 	if (! fopen) return false;
 
@@ -268,14 +269,12 @@ Boolean upload_tick(void)
 		xfer = frem;
 	} else {
 		if (config_has_capability(scsi_id, CAP_LARGE_SEND)) {
-			xblk = frem / UPLOAD_BLK_SIZE;
-			if (xblk > UPLOAD_MAX_BLOCKS) xblk = UPLOAD_MAX_BLOCKS;
+			xblk = (frem > UPLOAD_BUF_SIZE ? UPLOAD_MAX_BLOCKS : frem / UPLOAD_BLK_SIZE);
 		} else {
 			xblk = 1;
 		}
 		xfer = xblk * UPLOAD_BLK_SIZE;
 	}
-	frem -= xfer;
 
 	if (xfer == 0) {
 		progress_set_percent(100);
@@ -290,12 +289,24 @@ Boolean upload_tick(void)
 			upload_alert_ferr(err);
 		} else {
 			if (xblk > 1) {
-				if (err = scsi_write_blocks(scsi_id, fblk, *data, (short) xblk)) {
+				oxblk = xblk;
+				if (err = scsi_write_blocks(scsi_id, fblk, *data, &xblk)) {
 					scsi_alert(err);
+				} else {
+					xfer = xblk * UPLOAD_BLK_SIZE;
+					frem -= xfer;
+					if (oxblk != xblk) {
+						/* mismatch between bytes read and written, rewind */
+						if (err = SetFPos(fref, fsFromLEOF, -1 * frem)) {
+							upload_alert_ferr(err);
+						}
+					}
 				}
 			} else {
 				if (err = scsi_write_bytes(scsi_id, fblk, *data, (short) xfer)) {
 					scsi_alert(err);
+				} else {
+					frem -= xfer;
 				}
 			}
 		}

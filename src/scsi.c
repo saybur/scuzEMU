@@ -63,6 +63,9 @@
 #define SCSI_OP_WRITE  1
 #define SCSI_OP_NO_IO  0
 
+/* common responses to REQUEST SENSE */
+#define SENSE_INVALID_FIELD_CDB 0x00052400L
+
 /**
  * Fills a SCSIInstr for transmitting or receiving data.
  *
@@ -512,37 +515,51 @@ long scsi_read_file_bytes(short scsi_id, short index, long offset, char *data, s
  * capabilities support it (responsibility of the caller). Format is identical except for
  * byte 6, which is the number of 4K blocks to read.
  *
+ * To support targets who may not do a full 64K transfer this performs a progressive backoff
+ * if the target returns CHECK CONDITION with ILLEGAL REQUEST/INVALID FIELD IN CDB, dividing
+ * the number of blocks until it hits 1. This modifies the number of blocks parameter, which
+ * should be discarded unless this returns success.
+ *
  * @param scsi_id  device ID on [0, 6].
  * @param index    file index from the file listing.
  * @param offset   file offset to read from, in 4K chunks.
  * @param *data    pointer for data read off the SCSI device.
- * @param blocks   number of 4K blocks to read, max 16.
+ * @param *blocks  num of 4K blocks to read, max 16; updated on success with blocks read.
  * @return         0 on success, non-zero on failure.
  */
-long scsi_read_file_blocks(short scsi_id, short index, long offset, char *data, short blocks)
+long scsi_read_file_blocks(short scsi_id, short index, long offset, char *data, short *blocks)
 {
 	SCSIInstr instr[4];
 	char cdb[10];
 	long fail, sense;
 
 	/* device reverts to original format if byte 6 is zero, bypass by skipping */
-	if (blocks == 0) return 0;
+	if (*blocks == 0) return 0;
 	/* limit size to storage */
-	if (blocks > 16) blocks = 16;
+	if (*blocks > 16) *blocks = 16;
 
-	scsi_init_cdb(cdb);
-	cdb[0] = 0xD1;
-	cdb[1] = index;
-	cdb[2] = (offset >> 24) & 0xFF;
-	cdb[3] = (offset >> 16) & 0xFF;
-	cdb[4] = (offset >> 8) & 0xFF;
-	cdb[5] = offset & 0xFF;
-	cdb[6] = blocks;
+	sense = SENSE_INVALID_FIELD_CDB;
+	while (sense == SENSE_INVALID_FIELD_CDB && *blocks > 0) {
+		scsi_init_cdb(cdb);
+		cdb[0] = 0xD1;
+		cdb[1] = index;
+		cdb[2] = (offset >> 24) & 0xFF;
+		cdb[3] = (offset >> 16) & 0xFF;
+		cdb[4] = (offset >> 8) & 0xFF;
+		cdb[5] = offset & 0xFF;
+		cdb[6] = *blocks;
 
-	scsi_instr(instr, (long) data, blocks * 4096L, 4096);
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
-		scsi_request_sense(scsi_id, &sense); /* discard result */
-		return fail;
+		scsi_instr(instr, (long) data, *blocks * 4096L, 4096);
+		if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
+			scsi_request_sense(scsi_id, &sense);
+			if (sense == SENSE_INVALID_FIELD_CDB) {
+				*blocks /= 2;
+			} else {
+				return fail;
+			}
+		} else {
+			sense = 0;
+		}
 	}
 
 	return 0;
@@ -650,34 +667,48 @@ long scsi_write_bytes(short scsi_id, long offset, char *data, short length)
  * This uses the post-February 2026 0xD4 CDB format, only safe to use if the device
  * capabilities support it (responsibility of the caller).
  *
+ * To support targets who may not do a full 64K transfer this performs a progressive backoff
+ * if the target returns CHECK CONDITION with ILLEGAL REQUEST/INVALID FIELD IN CDB, dividing
+ * the number of blocks until it hits 1. This modifies the number of blocks parameter, which
+ * should be discarded unless this returns success.
+ *
  * @param scsi_id  the device at the given SCSI ID to command.
  * @param offset   24 bit offset where the block should be saved.
- * @param data     the data to save.
- * @param blocks   the number of 512-byte blocks to send, max 128 (64K).
+ * @param *data    the data to save.
+ * @param *blocks  num of 512-byte blocks to send, max 128 (64K); real blocks sent on success.
  * @return         error code, or zero for success.
  */
-long scsi_write_blocks(short scsi_id, long offset, char *data, short blocks)
+long scsi_write_blocks(short scsi_id, long offset, char *data, short *blocks)
 {
 	SCSIInstr instr[4];
 	char cdb[10];
 	long fail, sense;
 
 	/* device reverts to original format if byte 6 is zero, bypass by skipping */
-	if (blocks == 0) return 0;
+	if (*blocks == 0) return 0;
 	/* limit size to storage */
-	if (blocks > 128) blocks = 128;
+	if (*blocks > 128) *blocks = 128;
 
-	scsi_init_cdb(cdb);
-	cdb[0] = 0xD4;
-	cdb[3] = (offset >> 16) & 0xFF;
-	cdb[4] = (offset >> 8) & 0xFF;
-	cdb[5] = offset & 0xFF;
-	cdb[6] = blocks;
+	sense = SENSE_INVALID_FIELD_CDB;
+	while (sense == SENSE_INVALID_FIELD_CDB && *blocks > 0) {
+		scsi_init_cdb(cdb);
+		cdb[0] = 0xD4;
+		cdb[3] = (offset >> 16) & 0xFF;
+		cdb[4] = (offset >> 8) & 0xFF;
+		cdb[5] = offset & 0xFF;
+		cdb[6] = *blocks;
 
-	scsi_instr(instr, (long) data, blocks * 512L, 512);
-	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
-		scsi_request_sense(scsi_id, &sense); /* discard result */
-		return fail;
+		scsi_instr(instr, (long) data, *blocks * 512L, 512);
+		if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
+			scsi_request_sense(scsi_id, &sense);
+			if (sense == SENSE_INVALID_FIELD_CDB) {
+				*blocks /= 2;
+			} else {
+				return fail;
+			}
+		} else {
+			sense = 0;
+		}
 	}
 
 	return 0;

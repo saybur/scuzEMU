@@ -373,7 +373,8 @@ void transfer_end(void)
  */
 Boolean transfer_tick(void)
 {
-	long err, xfer, xblk, percent;
+	long err, xfer, percent;
+	short xblk;
 
 	if (! session) return false;
 
@@ -398,26 +399,30 @@ Boolean transfer_tick(void)
 		xfer = frem;
 	} else {
 		if (config_has_capability(scsi_id, CAP_LARGE_RECEIVE)) {
-			xblk = frem / XFER_BLK_SIZE;
-			if (xblk > XFER_MAX_BLOCKS) xblk = XFER_MAX_BLOCKS;
+			xblk = (frem > XFER_BUF_SIZE ? XFER_MAX_BLOCKS : frem / XFER_BLK_SIZE);
 		} else {
 			xblk = 1;
 		}
-		xfer = xblk * XFER_BLK_SIZE;
+		xfer = XFER_BLK_SIZE; /* only used if xblk = 1 */
 	}
-	frem -= xfer;
 
 	/* perform data exchange */
 	HLock(data);
 	if (xblk > 1) {
-		if (err = scsi_read_file_blocks(scsi_id, findex, fblk, *data, (short) xblk)) {
+		if (err = scsi_read_file_blocks(scsi_id, findex, fblk, *data, &xblk)) {
 			scsi_alert(err);
+		} else {
+			xfer = xblk * XFER_BLK_SIZE;
+			frem -= xfer;
 		}
 	} else {
 		if (err = scsi_read_file_bytes(scsi_id, findex, fblk, *data, (short) xfer)) {
 			scsi_alert(err);
+		} else {
+			frem -= xfer;
 		}
 	}
+
 	/* write results to file if valid */
 	if (! err) {
 		if (err = FSWrite(fref, &xfer, *data)) {
