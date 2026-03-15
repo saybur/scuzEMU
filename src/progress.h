@@ -23,6 +23,7 @@ Boolean progress_init(void);
 void progress_resume(Boolean resume);
 void progress_show(Boolean open);
 void progress_update(void);
+Boolean progress_visible(void);
 
 void progress_set_count(short count);
 void progress_set_direction(Boolean inbound);

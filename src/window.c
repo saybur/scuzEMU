@@ -406,6 +406,14 @@ void window_update(void)
 }
 
 /**
+ * @return true if the window is being shown.
+ */
+Boolean window_visible(void)
+{
+	return ((WindowPeek) window)->visible;
+}
+
+/**
  * Handles /zoomEvt/.
  *
  * @param region  one of inZoomIn or inZoomOut to pass to ZoomWindow.

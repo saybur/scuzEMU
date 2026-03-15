@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -14,24 +14,22 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __WINDOWH__
-#define __WINDOWH__
+#ifndef __PROGRAMH__
+#define __PROGRAMH__
 
-Boolean window_init(void);
+#define PROGRAM_MENU_COUNT     0
+#define PROGRAM_MENU_USE_EDIT  0
 
-void window_click(EventRecord *evt, Boolean *dclick);
-void window_key(EventRecord *evt);
-void window_next(short *i);
-void window_get_item_name(short item, Str255 str);
-short window_populate(short scsi, short mode, Handle h, short count);
+void program_evt_null(void);
+void program_in_content_progress(EventRecord *evt);
+void program_in_content_window(EventRecord *evt);
+Boolean program_init(void);
+void program_menu_command(short menu_id, short menu_item);
+void program_quit(void);
+void program_start(void);
+unsigned short program_state(void);
+void program_window_close(void);
+void program_window_key(EventRecord *evt, Boolean autokey);
+void program_update_menus(void);
 
-void window_activate(Boolean active);
-void window_grow(Point p);
-void window_resume(Boolean resume);
-void window_show(Boolean show);
-void window_text(unsigned char *str);
-void window_update(void);
-Boolean window_visible(void);
-void window_zoom(short region);
-
-#endif /* __WINDOWH__ */
+#endif /* __PROGRAMH__ */

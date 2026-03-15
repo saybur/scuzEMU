@@ -374,3 +374,11 @@ void progress_update(void)
 	progress_draw();
 	EndUpdate(window);
 }
+
+/**
+ * @return true if the progress window is being shown.
+ */
+Boolean progress_visible(void)
+{
+	return ((WindowPeek) window)->visible;
+}
