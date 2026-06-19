@@ -76,6 +76,53 @@ pascal static void draw_default_border(WindowPtr w, short i)
 }
 
 /**
+ * Presents a modal dialog asking the user to alter the device working
+ * directory path. This should be called with the current directory as
+ * a user hint; the passed directory will be altered if the user has
+ * approved a change.
+ *
+ * @param *dir  Str255 as a Pascal string, updated as above.
+ * @return      true if user selected OK, false otherwise.
+ */
+Boolean dialog_change_working_directory(unsigned char *dir)
+{
+	DialogPtr dialog;
+	short item_hit, item_type;
+	Handle item_handle;
+	Rect rect;
+
+	dialog = GetNewDialog(DLOG_SET_WORKDIR, 0L, (WindowPtr) -1);
+	if (dialog) {
+
+		/* assign the default item border drawing code */
+		GetDItem(dialog, 4, &item_type, &item_handle, &rect);
+		SetDItem(dialog, 4, item_type, (Handle) draw_default_border, &rect);
+
+		/* assign the current directory to the text field */
+		GetDItem(dialog, 5, &item_type, &item_handle, &rect);
+		SetIText(item_handle, dir);
+
+		ShowWindow(dialog);
+		do {
+			/* wait for click */
+			ModalDialog(0L, &item_hit);
+		} while (item_hit >= 3);
+		DisposDialog(dialog);
+
+		/* if user OK'd, update from indicated radio */
+		if (item_hit == 1) {
+			GetDItem(dialog, 5, &item_type, &item_handle, &rect);
+			GetIText(item_handle, dir);
+			return true;
+		}
+	} else {
+		mem_fail();
+	}
+
+	return false;
+}
+
+/**
  * Presents a modal dialog asking the user to enter the SCSI ID and whether to open a
  * file or image list. Returns true if the user pressed "OK," thus updating the input
  * values.

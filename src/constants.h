@@ -55,6 +55,7 @@
 #define CNTL_STOP           128
 
 #define DLOG_OPEN           512
+#define DLOG_SET_WORKDIR    513
 
 #define ICON_EMU            128
 #define ICON_DEVICE         129
@@ -67,7 +68,8 @@
 
 #define MENUI_OPEN          1
 #define MENUI_UPLOAD        3
-#define MENUI_QUIT          5
+#define MENUI_DIRECTORY     5
+#define MENUI_QUIT          7
 
 #define STR_GENERAL         128
 

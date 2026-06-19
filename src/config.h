@@ -19,6 +19,7 @@
 
 #define CAP_LARGE_RECEIVE     1
 #define CAP_LARGE_SEND        2
+#define CAP_WORK_DIRECTORY    4
 
 extern Boolean g_use_wne;
 extern Boolean g_use_qdcolor;

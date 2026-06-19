@@ -54,6 +54,7 @@ static unsigned short pstate;
 static short scsi_id;
 static unsigned char tb_api;
 static short open_type;
+static Str255 work_dir;
 
 /**
  * Performs a file/image list update from the emulator using stored values.
@@ -159,6 +160,41 @@ static void do_upload(void)
 	}
 }
 
+static void do_directory(void)
+{
+	unsigned char *work_dir;
+	long err;
+
+	if (pstate == STATE_OPEN && !open_type) {
+		/* double check if device can do this */
+		if (! config_has_capability(scsi_id, CAP_WORK_DIRECTORY)) {
+			return;
+		}
+
+		/* fetch current directory state */
+		if (! (work_dir = (unsigned char *) NewPtr(256))) {
+			mem_fail();
+		}
+		if (err = scsi_get_work_directory(scsi_id, work_dir)) {
+			scsi_alert(err);
+			DisposPtr((char *) work_dir);
+			return;
+		}
+
+		/* prompt user to change it */
+		if (dialog_change_working_directory(work_dir)) {
+			/* update device with legal value & redraw with changes */
+			if (work_dir[0] > 63) work_dir[0] = 63;
+			if (err = scsi_set_work_directory(scsi_id, work_dir)) {
+				scsi_alert(err);
+			}
+			do_list_update();
+		}
+
+		DisposPtr((char *) work_dir);
+	}
+}
+
 static void do_download(void)
 {
 	Str15 str;
@@ -256,6 +292,8 @@ void program_menu_command(short menu_id, short menu_item)
 			do_open();
 		} else if (menu_item == MENUI_UPLOAD) {
 			do_upload();
+		} else if (menu_item == MENUI_DIRECTORY) {
+			do_directory();
 		} else if (menu_item == MENUI_QUIT) {
 			program_quit();
 		}
@@ -331,6 +369,7 @@ void program_update_menus(void)
 	/* set default File state */
 	EnableItem(file, MENUI_OPEN);
 	DisableItem(file, MENUI_UPLOAD);
+	DisableItem(file, MENUI_DIRECTORY);
 	EnableItem(file, MENUI_QUIT);
 
 	/* disallow opening while a transfer is in progress */
@@ -341,5 +380,9 @@ void program_update_menus(void)
 	/* allow uploading only when we are connected & have files */
 	if (pstate == STATE_OPEN && !open_type) {
 		EnableItem(file, MENUI_UPLOAD);
+		/* and allow changing the working directory only if possible */
+		if (config_has_capability(scsi_id, CAP_WORK_DIRECTORY)) {
+			EnableItem(file, MENUI_DIRECTORY);
+		}
 	}
 }

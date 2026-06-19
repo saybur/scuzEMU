@@ -17,6 +17,7 @@
 #ifndef __DIALOGH__
 #define __DIALOGH__
 
+Boolean dialog_change_working_directory(unsigned char *dir);
 Boolean dialog_open(short *scsi, short *open_type);
 
 #endif /* __DIALOGH__ */

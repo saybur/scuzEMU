@@ -400,6 +400,42 @@ long scsi_get_emu_capabilities(short scsi_id, unsigned char *caps)
 }
 
 /**
+ * Queries a SCSI emulator for the current working directory for file
+ * operations. This only works if the correct capability flags are present.
+ * Provide an array of at least 65 bytes for the return data.
+ *
+ * @param scsi_id    device ID on [0, 6].
+ * @param *dir       set to Pascal-style string of the working directory.
+ * @return           error code, or zero for success.
+ */
+long scsi_get_work_directory(short scsi_id, unsigned char *dir)
+{
+	SCSIInstr instr[2];
+	char cdb[10];
+	long fail, sense;
+	short i;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD9;
+	cdb[1] = 3; /* get working directory */
+	cdb[8] = 64;
+
+	scsi_instr(instr, (long) (dir + 1), 64, 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_READ, instr)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		return fail;
+	}
+
+	/* update Pascal string length */
+	for (i = 1; i < 65; i++) {
+		if (dir[i] == '\0') break;
+	}
+	dir[0] = i;
+
+	return 0;
+}
+
+/**
  * Queries a SCSI emulator and asks for a list of available items.
  *
  * To list files requires 2 sequential commands:
@@ -593,6 +629,42 @@ long scsi_set_image(short scsi_id, short index)
 	return 0;
 }
 
+/**
+ * Asks the emulator to change the working directory to the path given by
+ * provided Pascal string. The provided buffer must have at least 65
+ * characters.
+ *
+ * CDB is 0xD9, subcommand 0x02, allocation length set to the number of
+ * characters to be sent. The reference implementation handles the null
+ * terminator but we send it anyway, sending \0 sets the device back to
+ * the default directory.
+ *
+ * @param scsi_id   the device at the given SCSI ID to command.
+ * @param *dir      the new working directory string, not null.
+ * @return          error code, or zero for success.
+ */
+long scsi_set_work_directory(short scsi_id, unsigned char *dir)
+{
+	SCSIInstr instr[2];
+	char cdb[10];
+	long fail, sense;
+
+	scsi_init_cdb(cdb);
+	cdb[0] = 0xD9;
+	cdb[1] = 2; /* set working directory */
+
+	/* append null terminator and set allocation accordingly */
+	cdb[8] = dir[0] + 1;
+	dir[cdb[8]] = '\0';
+
+	scsi_instr(instr, (long) (dir + 1), cdb[8], 0);
+	if (fail = scsi_t(scsi_id, cdb, sizeof(cdb), SCSI_OP_WRITE, instr)) {
+		scsi_request_sense(scsi_id, &sense); /* discard result */
+		return fail;
+	}
+
+	return 0;
+}
 
 /**
  * Starts a file upload on the emulator.
