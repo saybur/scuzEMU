@@ -138,12 +138,13 @@ static void do_open(void)
 {
 	Boolean is_emu;
 	long err;
-	short s, o;
+	short b, s, o;
 
+	b = 0;
 	s = scsi_id;
 	o = open_type;
 
-	if (dialog_open(&s, &o)
+	if (dialog_open(&b, &s, &o)
 			&& config_check_mode(s)) {
 		scsi_id = s;
 		open_type = o;

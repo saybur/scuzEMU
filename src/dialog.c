@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -76,6 +76,149 @@ pascal static void draw_default_border(WindowPtr w, short i)
 }
 
 /**
+ * Open variant for System 6 (no pop-ups). See the primary _open() for details.
+ *
+ * @param scsi_bus   SCSI bus number.
+ * @param scsi_id    SCSI ID, from 0-6.
+ * @param open_type  either 0 for files or 1 for images.
+ * @return           true if user selected OK, false otherwise.
+ */
+static Boolean dialog_open_sys6(short *scsi_bus, short *scsi_id, short *open_type)
+{
+	DialogPtr dialog;
+	short item_hit, item_type, sel_scsi, sel_open_type;
+	Handle item_handle;
+	Rect rect;
+
+	dialog = GetNewDialog(DLOG_OPEN, 0L, (WindowPtr) -1);
+	if (dialog) {
+
+		/* assign separator drawing code */
+		GetDItem(dialog, 14, &item_type, &item_handle, &rect);
+		SetDItem(dialog, 14, item_type, (Handle) draw_dots, &rect);
+
+		/* assign the default item border drawing code */
+		GetDItem(dialog, 15, &item_type, &item_handle, &rect);
+		SetDItem(dialog, 15, item_type, (Handle) draw_default_border, &rect);
+
+		/* SCSI radios are 3-9 for IDs 0-6; unsel last, sel new */
+		GetDItem(dialog, *scsi_id + 3, &item_type, &item_handle, &rect);
+		SetCtlValue((ControlHandle) item_handle, 1);
+		sel_scsi = *scsi_id;
+
+		/* open type is 10 for files and 11 for images */
+		GetDItem(dialog, *open_type + 10, &item_type, &item_handle, &rect);
+		SetCtlValue((ControlHandle) item_handle, 1);
+		sel_open_type = *open_type;
+
+		ShowWindow(dialog);
+		do {
+			/* wait for click */
+			ModalDialog(0L, &item_hit);
+
+			if (item_hit >= 12) {
+				continue;
+			} else if (item_hit >= 10) {
+				GetDItem(dialog, sel_open_type + 10, &item_type, &item_handle, &rect);
+				SetCtlValue((ControlHandle) item_handle, 0);
+				sel_open_type = item_hit - 10;
+				GetDItem(dialog, item_hit, &item_type, &item_handle, &rect);
+				SetCtlValue((ControlHandle) item_handle, 1);
+			} else if (item_hit >= 3) {
+				GetDItem(dialog, sel_scsi + 3, &item_type, &item_handle, &rect);
+				SetCtlValue((ControlHandle) item_handle, 0);
+				sel_scsi = item_hit - 3;
+				GetDItem(dialog, item_hit, &item_type, &item_handle, &rect);
+				SetCtlValue((ControlHandle) item_handle, 1);
+			}
+		} while (item_hit >= 3);
+		DisposDialog(dialog);
+
+		/* if user OK'd, update from indicated radio */
+		if (item_hit == 1) {
+			*scsi_bus = 0;
+			*scsi_id = sel_scsi;
+			*open_type = sel_open_type;
+			return true;
+		}
+	} else {
+		mem_fail();
+	}
+
+	return false;
+}
+
+/**
+ * Open variant for System 7 (with pop-ups). See the primary _open() for details.
+ *
+ * @param scsi_bus   SCSI bus number.
+ * @param scsi_id    SCSI ID, from 0-6.
+ * @param open_type  either 0 for files or 1 for images.
+ * @return           true if user selected OK, false otherwise.
+ */
+static Boolean dialog_open_sys7(short *scsi_bus, short *scsi_id, short *open_type)
+{
+	DialogPtr dialog;
+	short item_hit, item_type, sel_scsi, sel_open_type;
+	Handle item_handle;
+	Rect rect;
+
+	dialog = GetNewDialog(DLOG_OPEN_SYS7, 0L, (WindowPtr) -1);
+	if (dialog) {
+
+		/* assign separator drawing code */
+		GetDItem(dialog, 9, &item_type, &item_handle, &rect);
+		SetDItem(dialog, 9, item_type, (Handle) draw_dots, &rect);
+
+		/* assign the default item border drawing code */
+		GetDItem(dialog, 10, &item_type, &item_handle, &rect);
+		SetDItem(dialog, 10, item_type, (Handle) draw_default_border, &rect);
+
+		/* SCSI ID is item 4 */
+		GetDItem(dialog, 4, &item_type, &item_handle, &rect);
+		SetCtlValue((ControlHandle) item_handle, *scsi_id + 1);
+		sel_scsi = *scsi_id;
+
+		/* open type is 5 for files and 6 for images */
+		GetDItem(dialog, *open_type + 5, &item_type, &item_handle, &rect);
+		SetCtlValue((ControlHandle) item_handle, 1);
+		sel_open_type = *open_type;
+
+		ShowWindow(dialog);
+		do {
+			/* wait for click */
+			ModalDialog(0L, &item_hit);
+
+			if (item_hit >= 7) {
+				continue;
+			} else if (item_hit >= 5) {
+				GetDItem(dialog, sel_open_type + 10, &item_type, &item_handle, &rect);
+				SetCtlValue((ControlHandle) item_handle, 0);
+				sel_open_type = item_hit - 10;
+				GetDItem(dialog, item_hit, &item_type, &item_handle, &rect);
+				SetCtlValue((ControlHandle) item_handle, 1);
+			} else if (item_hit == 4) {
+				GetDItem(dialog, 4, &item_type, &item_handle, &rect);
+				sel_scsi = GetCtlValue((ControlHandle) item_handle) - 1;
+			}
+		} while (item_hit >= 3);
+		DisposDialog(dialog);
+
+		/* if user OK'd, update from indicated radio */
+		if (item_hit == 1) {
+			*scsi_bus = 0;
+			*scsi_id = sel_scsi;
+			*open_type = sel_open_type;
+			return true;
+		}
+	} else {
+		mem_fail();
+	}
+
+	return false;
+}
+
+/**
  * Presents a modal dialog asking the user to alter the device working
  * directory path. This should be called with the current directory as
  * a user hint; the passed directory will be altered if the user has
@@ -127,70 +270,20 @@ Boolean dialog_change_working_directory(unsigned char *dir)
  * file or image list. Returns true if the user pressed "OK," thus updating the input
  * values.
  *
- * @param scsi       SCSI ID, from 0-6.
+ * @param scsi_bus   SCSI bus number.
+ * @param scsi_id    SCSI ID, from 0-6.
  * @param open_type  either 0 for files or 1 for images.
  * @return           true if user selected OK, false otherwise.
  */
-Boolean dialog_open(short *scsi, short *open_type)
+Boolean dialog_open(short *scsi_bus, short *scsi_id, short *open_type)
 {
-	DialogPtr dialog;
-	short item_hit, item_type, sel_scsi, sel_open_type;
-	Handle item_handle;
-	Rect rect;
+	long i;
 
-	dialog = GetNewDialog(DLOG_OPEN, 0L, (WindowPtr) -1);
-	if (dialog) {
-
-		/* assign separator drawing code */
-		GetDItem(dialog, 14, &item_type, &item_handle, &rect);
-		SetDItem(dialog, 14, item_type, (Handle) draw_dots, &rect);
-
-		/* assign the default item border drawing code */
-		GetDItem(dialog, 15, &item_type, &item_handle, &rect);
-		SetDItem(dialog, 15, item_type, (Handle) draw_default_border, &rect);
-
-		/* SCSI radios are 3-9 for IDs 0-6; unsel last, sel new */
-		GetDItem(dialog, *scsi + 3, &item_type, &item_handle, &rect);
-		SetCtlValue((ControlHandle) item_handle, 1);
-		sel_scsi = *scsi;
-
-		/* open type is 10 for files and 11 for images */
-		GetDItem(dialog, *open_type + 10, &item_type, &item_handle, &rect);
-		SetCtlValue((ControlHandle) item_handle, 1);
-		sel_open_type = *open_type;
-
-		ShowWindow(dialog);
-		do {
-			/* wait for click */
-			ModalDialog(0L, &item_hit);
-
-			if (item_hit >= 12) {
-				continue;
-			} else if (item_hit >= 10) {
-				GetDItem(dialog, sel_open_type + 10, &item_type, &item_handle, &rect);
-				SetCtlValue((ControlHandle) item_handle, 0);
-				sel_open_type = item_hit - 10;
-				GetDItem(dialog, item_hit, &item_type, &item_handle, &rect);
-				SetCtlValue((ControlHandle) item_handle, 1);
-			} else if (item_hit >= 3) {
-				GetDItem(dialog, sel_scsi + 3, &item_type, &item_handle, &rect);
-				SetCtlValue((ControlHandle) item_handle, 0);
-				sel_scsi = item_hit - 3;
-				GetDItem(dialog, item_hit, &item_type, &item_handle, &rect);
-				SetCtlValue((ControlHandle) item_handle, 1);
-			}
-		} while (item_hit >= 3);
-		DisposDialog(dialog);
-
-		/* if user OK'd, update from indicated radio */
-		if (item_hit == 1) {
-			*scsi = sel_scsi;
-			*open_type = sel_open_type;
-			return true;
-		}
+	if (trap_available(_Gestalt)
+			&& ! Gestalt('pop!', &i)
+			&& i & 1) {
+		return dialog_open_sys7(scsi_bus, scsi_id, open_type);
 	} else {
-		mem_fail();
+		return dialog_open_sys6(scsi_bus, scsi_id, open_type);
 	}
-
-	return false;
 }

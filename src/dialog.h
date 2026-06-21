@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 saybur
+ * Copyright (C) 2024-2026 saybur
  *
  * This program is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -18,6 +18,6 @@
 #define __DIALOGH__
 
 Boolean dialog_change_working_directory(unsigned char *dir);
-Boolean dialog_open(short *scsi, short *open_type);
+Boolean dialog_open(short *scsi_bus, short *scsi_id, short *open_type);
 
 #endif /* __DIALOGH__ */

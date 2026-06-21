@@ -55,7 +55,8 @@
 #define CNTL_STOP           128
 
 #define DLOG_OPEN           512
-#define DLOG_SET_WORKDIR    513
+#define DLOG_OPEN_SYS7      513
+#define DLOG_SET_WORKDIR    514
 
 #define ICON_EMU            128
 #define ICON_DEVICE         129
